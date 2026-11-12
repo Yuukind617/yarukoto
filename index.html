@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <!-- 指でつまんで拡大されないようにする -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>やることリスト</title>
+  <!-- iPadの「ホーム画面に追加」で、全画面のアプリのように開くための指定 -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="やること">
+  <link rel="apple-touch-icon" href="icon.png">
+  <link rel="icon" href="icon.png">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ① 時間外の画面(暗い画面に時計だけ) -->
+  <section id="screen-sleep" class="screen active">
+    <div id="sleep-clock" class="sleep-clock"></div>
+    <div class="sleep-text">じかんに なったら はじまるよ</div>
+  </section>
+
+  <!-- ② やることリストの画面 -->
+  <section id="screen-list" class="screen">
+    <header class="topbar">
+      <div class="title"><span id="list-icon" class="title-icon"></span><span id="list-title"></span></div>
+      <div id="clock" class="clock"></div>
+    </header>
+    <!-- 7時半の注意が出ているあいだ表示する帯 -->
+    <div id="hurry-banner" class="hurry-banner hidden">いそごう！ じかんが なくなるよ</div>
+    <!-- ここにカード(ごはん、はみがき…)が入る -->
+    <div id="task-cards" class="task-cards"></div>
+    <div class="list-footer">
+      <div id="list-message" class="list-message">できたら えを タッチしてね</div>
+      <button id="btn-quiz" class="big-button hidden">もんだいに ちょうせん！</button>
+    </div>
+  </section>
+
+  <!-- ③ もんだいの画面 -->
+  <section id="screen-quiz" class="screen">
+    <div id="quiz-question" class="quiz-question"></div>
+    <div class="quiz-body">
+      <div id="quiz-picture" class="quiz-picture"></div>   <!-- 絵や地図 -->
+      <div id="quiz-choices" class="quiz-choices"></div>   <!-- 4つのこたえ -->
+    </div>
+    <div id="quiz-result" class="quiz-result hidden"></div> <!-- せいかい！の表示 -->
+    <div id="quiz-count" class="quiz-count hidden"></div>   <!-- もんだいだけモードの、せいかいの数 -->
+  </section>
+
+  <!-- ④ カレンダーの画面 -->
+  <section id="screen-calendar" class="screen">
+    <header class="topbar">
+      <div class="title" id="cal-title"></div>
+      <div id="cal-message" class="cal-message"></div>
+      <button id="btn-video" class="big-button small hidden">どうがを みる</button>
+    </header>
+    <div id="calendar" class="calendar"></div>
+    <!-- 花丸をもらう瞬間の大きな表示 -->
+    <div id="stamp" class="stamp hidden"><div id="stamp-mark"></div><div class="stamp-text">はなまる！</div></div>
+  </section>
+
+  <!-- ⑤ どうがをえらぶ画面 -->
+  <section id="screen-videos" class="screen">
+    <header class="topbar">
+      <div class="title">どれを みる？</div>
+      <button id="btn-back" class="big-button small gray">もどる</button>
+    </header>
+    <div id="video-cards" class="video-cards"></div>
+  </section>
+
+  <!-- ⑥ どうがを再生する画面 -->
+  <section id="screen-player" class="screen">
+    <video id="player" playsinline></video>
+    <button id="btn-stop" class="stop-button">おわる</button>
+  </section>
+
+  <!-- 注意(いそごう！)の大きな表示。タッチで消える -->
+  <div id="warn-overlay" class="warn-overlay hidden">
+    <div class="warn-box">
+      <div class="warn-title">いそごう！</div>
+      <div class="warn-text">まだ ひとつも おわってないよ</div>
+      <div class="warn-hint">タッチすると おとが とまるよ</div>
+    </div>
+  </div>
+
+  <!-- おとなメニューを開くための、見えないボタン(左下を2秒ながおし) -->
+  <div id="parent-spot" class="parent-spot"></div>
+
+  <!-- おとなメニュー -->
+  <div id="parent" class="parent hidden">
+    <div class="parent-box">
+      <!-- 開く前の確認(子どもがまちがって開かないように、かけざんを出す) -->
+      <div id="parent-gate">
+        <h2>おとなメニュー</h2>
+        <p class="p-note">答えをタッチしてください</p>
+        <div id="gate-question" class="gate-question"></div>
+        <div id="gate-choices" class="gate-choices"></div>
+        <button class="p-btn gray" data-act="close">とじる</button>
+      </div>
+      <!-- メニュー本体 -->
+      <div id="parent-menu" class="hidden">
+        <h2>おとなメニュー</h2>
+
+        <h3>動画(このiPadの中に保存されます)</h3>
+        <div id="p-videos"></div>
+        <label class="p-btn">動画を追加する
+          <input id="p-file" type="file" accept="video/*" multiple hidden>
+        </label>
+        <div id="p-status" class="p-note"></div>
+
+        <h3>もんだいだけモード(時間外や土日でも使えます。花丸・動画はありません)</h3>
+        <button class="p-btn" data-act="practice-all">ぜんぶ</button>
+        <button class="p-btn" data-act="practice-math">たしざんだけ</button>
+        <button class="p-btn" data-act="practice-map">にほんちずだけ</button>
+        <button class="p-btn" data-act="practice-picture">これはなに？だけ</button>
+        <button class="p-btn gray" data-act="practice-stop">やめる</button>
+        <span id="p-practice-state" class="p-note"></span>
+
+        <h3>動作テスト(時間に関係なく始めます。花丸は保存されません)</h3>
+        <button class="p-btn" data-act="test-morning">朝をためす</button>
+        <button class="p-btn" data-act="test-evening">夜をためす</button>
+        <button class="p-btn" data-act="test-warn">朝＋注意をためす</button>
+        <button class="p-btn gray" data-act="test-stop">テストをやめる</button>
+        <span id="p-test-state" class="p-note"></span>
+
+        <h3>記録</h3>
+        <button class="p-btn red" data-act="reset-today">今日の記録を消す</button>
+        <button class="p-btn red" data-act="reset-all">すべての記録を消す</button>
+
+        <div class="p-footer"><button class="p-btn gray" data-act="close">とじる</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- たて向きのときに出す案内 -->
+  <div id="rotate" class="rotate">iPadを よこむきに してね</div>
+
+  <!-- 読み込む順番が大事:設定 → 絵 → 地図 → 本体 -->
+  <script src="config.js"></script>
+  <script src="pictures.js"></script>
+  <script src="japan_map.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

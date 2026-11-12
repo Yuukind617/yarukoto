@@ -1,0 +1,292 @@
+/* ============================================================
+   見た目(色・大きさ・配置)の設定
+   大きさは vw(画面の横幅の1%)と vh(画面の高さの1%)で
+   指定しているので、画面の解像度が違っても同じ比率で表示される。
+   ============================================================ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;                 /* スクロールさせない */
+  background: #000;
+  font-family: "Noto Sans CJK JP", "Noto Sans JP", "IPAexGothic", "IPAGothic", "TakaoGothic", sans-serif;
+  font-weight: 700;
+  color: #3e3e3e;
+  cursor: none;                     /* マウスの矢印を消す(タッチ専用) */
+  user-select: none;                /* 長押しで文字が選択されないように */
+  -webkit-user-select: none;
+  touch-action: manipulation;       /* ダブルタップ拡大を止める */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;      /* iPadの長押しメニューを出さない */
+  position: fixed; inset: 0;        /* 画面が引っぱられて動くのを止める */
+}
+
+.hidden { display: none !important; }
+
+/* ---------- 画面の切り替え:active が付いた画面だけ見える ---------- */
+.screen {
+  position: fixed; inset: 0;
+  display: none;
+  flex-direction: column;
+  padding: calc(2.5vh + env(safe-area-inset-top)) calc(2.5vw + env(safe-area-inset-right))
+           calc(2.5vh + env(safe-area-inset-bottom)) calc(2.5vw + env(safe-area-inset-left));
+}
+.screen.active { display: flex; }
+
+/* 朝は明るい空色、夜はこん色 */
+body.morning .screen { background: linear-gradient(#bfe6ff, #fff6d6); }
+body.evening .screen { background: linear-gradient(#1f2a5c, #47407a); }
+body.evening .title, body.evening .clock,
+body.evening .list-message, body.evening .quiz-question,
+body.evening .cal-message { color: #fff; }
+
+/* 時間外と動画再生はまっくろ */
+#screen-sleep, #screen-player,
+body.morning #screen-sleep, body.evening #screen-sleep,
+body.morning #screen-player, body.evening #screen-player { background: #000; padding: 0; }
+
+/* ---------- 上の帯(タイトルと時計) ---------- */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 2vw; height: 12vh; flex: none;
+}
+.title { font-size: 7vh; display: flex; align-items: center; gap: 1.5vw; white-space: nowrap; }
+.title-icon svg { width: 10vh; height: 10vh; display: block; }
+.clock { font-size: 7vh; font-variant-numeric: tabular-nums; }
+
+/* ---------- 大きなボタン ---------- */
+.big-button {
+  font: inherit; font-size: 6vh; color: #fff;
+  background: #ff7043; border: none; border-radius: 4vh;
+  padding: 2vh 5vw;
+  box-shadow: 0 1vh 0 #c63f17;
+  cursor: none;
+  animation: bounce 1s ease-in-out infinite;   /* ぴょこぴょこ動いて目立たせる */
+}
+.big-button:active { transform: translateY(0.6vh); box-shadow: 0 0.4vh 0 #c63f17; animation: none; }
+.big-button.small { font-size: 4.5vh; padding: 1.5vh 3vw; }
+.big-button.gray { background: #90a4ae; box-shadow: 0 1vh 0 #62757f; animation: none; }
+@keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-1.2vh); } }
+
+/* ============================================================
+   やることリスト
+   ============================================================ */
+.hurry-banner {
+  flex: none; text-align: center; font-size: 4.5vh; color: #fff;
+  background: #e53935; border-radius: 2vh; padding: 0.8vh; margin-top: 1vh;
+  animation: blink 1s steps(2) infinite;
+}
+@keyframes blink { 50% { background: #ff8a65; } }
+
+.task-cards {
+  flex: 1; display: flex; gap: 2vw;
+  align-items: stretch; justify-content: center;
+  padding: 3vh 0; min-height: 0;
+}
+.task-card {
+  flex: 1; max-width: 24vw;
+  position: relative;
+  background: #fff; border: 1vh solid #fff; border-radius: 5vh;
+  box-shadow: 0 1.2vh 0 rgba(0,0,0,.18);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2vh; padding: 2vh 1vw;
+  transition: transform .1s;
+}
+.task-card:active { transform: scale(.96); }
+.task-card .pic { width: 100%; flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
+.task-card .pic svg { width: 100%; height: 100%; max-height: 38vh; }
+.task-card .label { font-size: 6.5vh; white-space: nowrap; }
+/* カードが5枚(夜)のときは文字を少し小さく */
+.task-cards.five .task-card .label { font-size: 5.2vh; }
+
+/* できた! のカード:緑のわく + 花丸を上に重ねる */
+.task-card.done { border-color: #66bb6a; background: #f1f8e9; }
+.task-card.done .pic { opacity: .45; }
+.task-card .done-mark { position: absolute; inset: 4% 4% 22% 4%; display: none; pointer-events: none; }
+.task-card.done .done-mark { display: block; }
+.task-card .done-mark svg { width: 100%; height: 100%; }
+/* タッチした瞬間だけ花丸を「書く」アニメーション */
+.task-card.just-done .done-mark path { stroke-dasharray: 1; animation: draw .7s ease-out both; }
+@keyframes draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+
+.list-footer { flex: none; height: 15vh; display: flex; align-items: center; justify-content: center; }
+.list-message { font-size: 5vh; }
+
+/* ============================================================
+   もんだい
+   ============================================================ */
+.quiz-question { flex: none; font-size: 7vh; text-align: center; height: 12vh; line-height: 12vh; }
+.quiz-body { flex: 1; display: flex; gap: 2.5vw; min-height: 0; }
+.quiz-picture {
+  flex: 1.25; background: #fff; border-radius: 5vh; padding: 2vh;
+  display: flex; align-items: center; justify-content: center;
+  min-width: 0; min-height: 0; overflow: hidden;
+  box-shadow: 0 1.2vh 0 rgba(0,0,0,.18);
+}
+.quiz-picture > svg, .quiz-picture > img { width: 100%; height: 100%; object-fit: contain; }
+
+.quiz-choices { flex: 1; display: flex; flex-direction: column; gap: 2.2vh; }
+.choice {
+  flex: 1; font: inherit; font-size: 6.5vh; color: #3e3e3e;
+  background: #fff; border: 0.8vh solid #42a5f5; border-radius: 4vh;
+  box-shadow: 0 1vh 0 #1e88e5; cursor: none; white-space: nowrap;
+}
+.choice.long { font-size: 5.2vh; }            /* 文字数が多いときは小さく */
+.choice:active { transform: translateY(0.5vh); box-shadow: 0 0.5vh 0 #1e88e5; }
+.choice.wrong { background: #e0e0e0; border-color: #bdbdbd; color: #9e9e9e; box-shadow: none; animation: shake .4s; }
+.choice.correct { background: #66bb6a; border-color: #2e7d32; color: #fff; box-shadow: 0 1vh 0 #2e7d32; }
+@keyframes shake { 20% { transform: translateX(-1.2vw); } 40% { transform: translateX(1.2vw); } 60% { transform: translateX(-.8vw); } 80% { transform: translateX(.8vw); } }
+
+/* たしざん:りんごの絵と式 */
+.math { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: space-evenly; }
+.math-apples { display: flex; align-items: center; justify-content: center; gap: 1.5vw; width: 100%; }
+.math-group { display: flex; flex-wrap: wrap; justify-content: center; gap: .5vw; max-width: 19vw; }
+.math-group svg { width: 5.6vw; height: 5.6vw; }
+.math-plus { font-size: 9vh; color: #ff7043; }
+.math-formula { font-size: min(17vh, 9.5vw); line-height: 1; letter-spacing: 1vw; white-space: nowrap; }  /* iPadの画面比でも1行におさまる大きさ */
+.math-formula .q { color: #e53935; }
+
+/* 日本地図:ふつうの県はうすい緑、こたえの県は赤 */
+.map-wrap { position: relative; width: 100%; height: 100%; background: #e1f5fe; border-radius: 3.5vh; overflow: hidden; }
+.map.main { width: 100%; height: 100%; display: block; }
+/* 左上の小さな地図(日本のどのあたりかを見せる) */
+.map.mini { position: absolute; left: 1vh; top: 1vh; width: 27%; background: #fff; border: .5vh solid #90a4ae; border-radius: 2vh; }
+.map path { fill: #aed581; stroke: #fff; stroke-width: .6; }
+.map path.target { fill: #e53935; stroke: #b71c1c; }
+.map.mini path { stroke-width: .3; }
+/* vector-effect:地図を拡大しても線の太さを変えない */
+.map .spot { fill: rgba(229,57,53,.25); stroke: #e53935; stroke-width: 3px; vector-effect: non-scaling-stroke; }
+/* こたえの場所をかこむ、ひろがる輪 */
+.map .ring { fill: none; stroke: #e53935; stroke-width: 6px; vector-effect: non-scaling-stroke; transform-box: fill-box; transform-origin: center; animation: ring 1.4s ease-out infinite; }
+@keyframes ring { from { transform: scale(.6); opacity: 1; } to { transform: scale(1.6); opacity: 0; } }
+
+/* せいかい! の表示 */
+.quiz-result {
+  position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 22vh; color: #e53935; pointer-events: none;
+  -webkit-text-stroke: 1.2vh #fff; paint-order: stroke fill;
+  animation: pop .5s cubic-bezier(.2,2,.4,1) both;
+}
+@keyframes pop { from { transform: scale(0); } to { transform: scale(1); } }
+
+/* ============================================================
+   カレンダー
+   ============================================================ */
+.cal-message { font-size: 4.2vh; text-align: right; flex: 1; }
+.calendar {
+  flex: 1; min-height: 0; margin-top: 1.5vh;
+  display: grid; grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-rows: 6vh; grid-auto-rows: 1fr; gap: .8vh;
+}
+.cal-head { font-size: 4vh; text-align: center; color: #fff; background: #78909c; border-radius: 1.5vh; line-height: 6vh; }
+.cal-head.sun { background: #e57373; }
+.cal-head.sat { background: #64b5f6; }
+.cal-cell { background: rgba(255,255,255,.9); border-radius: 1.5vh; position: relative; display: flex; align-items: center; justify-content: flex-end; padding: .5vh .6vw; gap: .3vw; min-height: 0; overflow: hidden; }
+.cal-cell.empty { background: rgba(255,255,255,.25); }
+.cal-cell.today { outline: .8vh solid #ff7043; }
+.cal-cell .num { position: absolute; left: .7vw; top: .3vh; font-size: 3.6vh; z-index: 2; text-shadow: 0 0 .6vh #fff, 0 0 .6vh #fff, 0 0 .6vh #fff; }  /* 花丸と重なっても読めるよう白いふち */
+.cal-cell.sun .num { color: #e53935; }
+.cal-cell.sat .num { color: #1e88e5; }
+/* 1日に2つのわく(左:朝 右:夜) */
+.cal-slot { height: 64%; aspect-ratio: 1; position: relative; flex: none; align-self: flex-end; }
+.cal-slot > svg { position: absolute; inset: 0; width: 100%; height: 100%; }   /* 花丸 */
+.cal-slot .mark-bg { position: absolute; inset: 18%; opacity: .25; }           /* うすい太陽/月 */
+.cal-slot .mark-bg svg { width: 100%; height: 100%; display: block; }
+.cal-slot.got .mark-bg { display: none; }                                       /* 花丸をもらったら消す */
+.cal-slot .hanamaru path { stroke-width: 9; }            /* 小さくても見えるよう太く */
+
+/* 花丸をもらう瞬間の大きな表示 */
+.stamp { position: fixed; inset: 0; background: rgba(255,255,255,.88); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.stamp svg { width: 62vh; height: 62vh; }
+.stamp path { stroke-dasharray: 1; animation: draw 1.6s ease-in-out both; }
+.stamp-text { font-size: 13vh; color: #e53935; animation: pop .5s 1.5s cubic-bezier(.2,2,.4,1) both; }
+
+/* ============================================================
+   どうが
+   ============================================================ */
+.video-cards { flex: 1; display: flex; gap: 2.5vw; align-items: center; justify-content: center; min-height: 0; }
+.video-card {
+  flex: 1; max-width: 31vw; background: #fff; border-radius: 4vh; padding: 1.5vh;
+  box-shadow: 0 1.2vh 0 rgba(0,0,0,.18);
+  display: flex; flex-direction: column; gap: 1.5vh; align-items: center;
+}
+.video-card:active { transform: scale(.96); }
+.video-card .thumb { width: 100%; aspect-ratio: 16/9; background: #263238; border-radius: 2.5vh; overflow: hidden; position: relative; }
+.video-card video { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+/* サムネイルの上の再生マーク(三角) */
+.video-card .thumb::after {
+  content: ""; position: absolute; left: 50%; top: 50%; transform: translate(-35%, -50%);
+  border-style: solid; border-width: 5vh 0 5vh 8vh; border-color: transparent transparent transparent rgba(255,255,255,.9);
+  filter: drop-shadow(0 0 1vh rgba(0,0,0,.6));
+}
+.video-card .name { font-size: 4vh; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.no-video { font-size: 5vh; text-align: center; line-height: 1.8; }
+body.evening .no-video { color: #fff; }
+
+#player { width: 100%; height: 100%; background: #000; }
+.stop-button {
+  position: fixed; right: 2vw; top: 2vh; font: inherit; font-size: 4vh; color: #fff;
+  background: rgba(0,0,0,.55); border: .4vh solid rgba(255,255,255,.7); border-radius: 3vh; padding: 1vh 2.5vw; cursor: none;
+}
+
+/* ============================================================
+   注意(いそごう!)
+   ============================================================ */
+.warn-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(229,57,53,.9);
+  animation: warnflash .8s steps(2) infinite;
+}
+@keyframes warnflash { 50% { background: rgba(255,167,38,.92); } }
+.warn-box { text-align: center; color: #fff; }
+.warn-title { font-size: 26vh; line-height: 1.1; }
+.warn-text { font-size: 8vh; }
+.warn-hint { font-size: 4vh; margin-top: 4vh; opacity: .9; }
+
+/* ============================================================
+   iPad版で追加した部分
+   ============================================================ */
+/* 時間外の画面:暗い中に時計だけうっすら出す */
+#screen-sleep { align-items: center; justify-content: center; gap: 2vh; }
+.sleep-clock { font-size: 22vh; color: #2f2f2f; font-variant-numeric: tabular-nums; }
+.sleep-text { font-size: 4vh; color: #2a2a2a; }
+
+/* おとなメニューを開く見えないボタン(左下) */
+.parent-spot { position: fixed; left: 0; bottom: 0; width: 9vw; height: 11vh; z-index: 150; }
+
+/* おとなメニュー */
+.parent { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; }
+.parent-box {
+  width: 80vw; max-height: 90vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  background: #fff; border-radius: 3vh; padding: 3vh 3vw; color: #333; font-weight: 400;
+}
+.parent h2 { font-size: 4.5vh; margin-bottom: 1.5vh; }
+.parent h3 { font-size: 2.8vh; margin: 3vh 0 1.2vh; padding-top: 2vh; border-top: 1px solid #ddd; }
+.p-note { font-size: 2.6vh; color: #666; margin: 1vh 0; }
+.p-btn {
+  display: inline-block; font: inherit; font-size: 2.8vh; font-weight: 700; color: #fff;
+  background: #1e88e5; border: none; border-radius: 1.5vh; padding: 1.4vh 2vw; margin: .5vh .5vw .5vh 0;
+}
+.p-btn.small { font-size: 2.3vh; padding: 1vh 1.4vw; }
+.p-btn.gray { background: #78909c; }
+.p-btn.red { background: #e53935; }
+.p-row { display: flex; align-items: center; gap: 1vw; padding: .6vh 0; border-bottom: 1px solid #eee; }
+.p-name { flex: 1; font-size: 2.8vh; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gate-question { font-size: 9vh; font-weight: 700; text-align: center; margin: 2vh 0; }
+.gate-choices { display: flex; justify-content: center; gap: 2vw; margin-bottom: 3vh; }
+.gate-choices .p-btn { font-size: 5vh; padding: 2vh 4vw; }
+.p-footer { margin-top: 3vh; text-align: right; }
+
+/* たて向きのときだけ出す案内 */
+.rotate { display: none; position: fixed; inset: 0; z-index: 300; background: #263238; color: #fff; font-size: 5vw; align-items: center; justify-content: center; }
+@media (orientation: portrait) { .rotate { display: flex; } }
+
+/* もんだいだけモード:朝・夜と見分けがつくよう、うすい緑の背景にする */
+body.practice .screen { background: linear-gradient(#d5f5d0, #fffbe0); }
+/* せいかいの数(★)を右上に出す */
+.quiz-count {
+  position: fixed; right: calc(2.5vw + env(safe-area-inset-right)); top: calc(2.5vh + env(safe-area-inset-top));
+  height: 12vh; line-height: 12vh; font-size: 6vh; color: #f57c00;
+}
