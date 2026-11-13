@@ -290,3 +290,52 @@ const MOON_SVG = svgWrap(`
 
 // りんごの小さな絵(たしざんで数をかぞえるのに使う)
 const COUNT_APPLE = FRUITS[0].svg;
+
+// ------------------------------------------------------------
+// 朝ごはんタイマー用の絵:くまが ごはんを たべているところ
+//   id="bf-rice" の白いごはんの山を、のこり時間に合わせて app.js が低くしていく
+//   (おちゃわんのふち y=100 を基準に、たて方向にちぢめる)
+//   class="bf-item" のおかず(たまごやき3つ・ウインナー3本)は、時間がたつと
+//   data-order の大きいものから1つずつ消えていく
+// ------------------------------------------------------------
+const BREAKFAST_SVG = `<svg viewBox="0 0 270 150" xmlns="http://www.w3.org/2000/svg">
+  <!-- からだ(テーブルのうしろ) -->
+  <ellipse cx="70" cy="132" rx="46" ry="38" fill="#c98d5a" ${S}/>
+  <!-- みみ -->
+  <circle cx="40" cy="30" r="14" fill="#c98d5a" ${S}/><circle cx="40" cy="30" r="7" fill="#f3c9a0"/>
+  <circle cx="100" cy="30" r="14" fill="#c98d5a" ${S}/><circle cx="100" cy="30" r="7" fill="#f3c9a0"/>
+  <!-- かお -->
+  <circle cx="70" cy="62" r="42" fill="#c98d5a" ${S}/>
+  <ellipse cx="70" cy="77" rx="19" ry="15" fill="#f6dcc0"/>
+  <ellipse cx="70" cy="69" rx="6" ry="4" fill="#4a4a4a"/>
+  <circle cx="54" cy="55" r="4" fill="#4a4a4a"/><circle cx="86" cy="55" r="4" fill="#4a4a4a"/>
+  <circle cx="42" cy="74" r="7" fill="#f8a5b8" opacity=".7"/><circle cx="98" cy="74" r="7" fill="#f8a5b8" opacity=".7"/>
+  <!-- くち:たべている間は もぐもぐ動く / からっぽになったら にっこり -->
+  <ellipse class="bf-mouth" cx="70" cy="84" rx="5" ry="3.5" fill="#c0392b"/>
+  <path class="bf-smile" d="M61 82 Q70 91 79 82" fill="none" ${S}/>
+  <!-- テーブル -->
+  <!-- (画面の形によって絵のまわりに余白ができても、からだがはみ出して見えないよう、広めに描く) -->
+  <rect x="-200" y="120" width="670" height="300" fill="#e0b27a"/>
+  <path d="M-200 120 H470" stroke="#4a4a4a" stroke-width="2.5"/>
+  <!-- おちゃわん(ごはんの山 → うつわ の順に重ねる) -->
+  <path id="bf-rice" d="M120 100 Q150 56 180 100 Z" fill="#fff" ${S}/>
+  <path d="M113 98 H187 Q185 121 168 126 H132 Q115 121 113 98Z" fill="#ef5350" ${S}/>
+  <rect x="138" y="125" width="24" height="6" rx="2" fill="#c62828" ${S}/>
+  <path d="M122 106 Q150 114 178 106" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- おかずのおさら:たまごやき と ウインナー(下の段 → 上の段 の順に重ねる) -->
+  <ellipse cx="230" cy="125" rx="36" ry="8" fill="#fff" ${S}/>
+  <ellipse cx="230" cy="124" rx="26" ry="4.5" fill="none" stroke="#cfd8dc" stroke-width="1.5"/>
+  <g class="bf-item" data-order="0"><rect x="199" y="110" width="17" height="12" rx="3.5" fill="#fdd835" ${S}/><path d="M203 116 Q207.5 111.5 212 116 Q207.5 119.5 206 116" fill="none" stroke="#f9a825" stroke-width="1.8" stroke-linecap="round"/></g>
+  <g class="bf-item" data-order="2"><rect x="217" y="110" width="17" height="12" rx="3.5" fill="#fdd835" ${S}/><path d="M221 116 Q225.5 111.5 230 116 Q225.5 119.5 224 116" fill="none" stroke="#f9a825" stroke-width="1.8" stroke-linecap="round"/></g>
+  <g class="bf-item" data-order="1" transform="rotate(-14 249 117)"><rect x="236" y="112.5" width="26" height="9" rx="4.5" fill="#d9684a" ${S}/><path d="M244 114 L246 120 M249 114 L251 120 M254 114 L256 120" stroke="#a84a32" stroke-width="1.5" stroke-linecap="round"/></g>
+  <g class="bf-item" data-order="4"><rect x="208" y="98" width="17" height="12" rx="3.5" fill="#fdd835" ${S}/><path d="M212 104 Q216.5 99.5 221 104 Q216.5 107.5 215 104" fill="none" stroke="#f9a825" stroke-width="1.8" stroke-linecap="round"/></g>
+  <g class="bf-item" data-order="3" transform="rotate(-14 250 108)"><rect x="237" y="103.5" width="26" height="9" rx="4.5" fill="#d9684a" ${S}/><path d="M245 105 L247 111 M250 105 L252 111 M255 105 L257 111" stroke="#a84a32" stroke-width="1.5" stroke-linecap="round"/></g>
+  <g class="bf-item" data-order="5" transform="rotate(-14 249 99)"><rect x="236" y="94.5" width="26" height="9" rx="4.5" fill="#d9684a" ${S}/><path d="M244 96 L246 102 M249 96 L251 102 M254 96 L256 102" stroke="#a84a32" stroke-width="1.5" stroke-linecap="round"/></g>
+  <!-- て と スプーン(たべている間は上下に動く) -->
+  <g class="bf-spoon">
+    <path d="M112 108 L96 92" stroke="#9e9e9e" stroke-width="5" stroke-linecap="round"/>
+    <ellipse cx="93" cy="89" rx="8" ry="6" fill="#e0e0e0" ${S}/>
+    <ellipse class="bf-bite" cx="93" cy="87" rx="5" ry="3.5" fill="#fff" stroke="#4a4a4a" stroke-width="1.5"/>
+    <circle cx="114" cy="110" r="11" fill="#c98d5a" ${S}/>
+  </g>
+</svg>`;

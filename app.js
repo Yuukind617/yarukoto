@@ -60,6 +60,8 @@ let testMode = null;       // おとなメニューの動作テスト中は {id,
 let testCount = 0;         // テストを始めた回数(毎回あたらしい回として始めるため)
 let practice = null;       // もんだいだけモード中は {types:出す種類, count:せいかい数, key:始めたときの時間帯}
 let greetPending = false;  // 朝/夜のはじまりのあいさつを、まだ言っていない
+let breakfastOn = false;   // いま朝ごはんタイマーの表示中か
+let breakfastEmptySaid = false;  // 「おしまいだよ」をもう言ったか
 let lastAnswer = null;     // 直前のもんだいのこたえ(同じもんだいが続かないようにする)
 
 // よく使う小道具 ---------------------------------------------
@@ -238,6 +240,7 @@ function tick() {
 
   lastWarn = st.warn;
   checkWarn();
+  updateBreakfast();         // 朝ごはんタイマー(始まったときは、あいさつのかわりに案内を言う)
 
   // 朝/夜のはじまりのあいさつ(注意が出ているときは、注意のほうを優先して言わない)
   if (greetPending) {
@@ -273,6 +276,7 @@ function startSession(st, key) {
   record = Object.assign(newRecord(), saved || {});
   if (typeof record.tasks !== 'object' || record.tasks === null) record.tasks = {};
   warnDismissed = false;
+  breakfastOn = false;
   clearVideoChoices();
   document.body.className = session;     // 朝と夜で色を変える
 
@@ -280,7 +284,8 @@ function startSession(st, key) {
     showCalendar(false);                      // もう花丸をもらっている → カレンダーから
   } else {
     showList();                               // まだ → やることリストから
-    greetPending = true;                      // あいさつは tick の最後で(注意が出るときは言わない)
+    // あいさつは tick の最後で(注意が出るときは言わない)。朝ごはんタイマーの案内を言ったときは、あいさつはしない
+    greetPending = !breakfastOn;
   }
 }
 
@@ -307,8 +312,17 @@ function showList() {
     card.addEventListener('click', () => toggleTask(t.id, card));
     box.appendChild(card);
   });
+  // 朝ごはんタイマー用の絵(ごはんのカードの右に出る。タイマー中だけ見える)
+  if (session === 'morning') {
+    const scene = document.createElement('div');
+    scene.id = 'breakfast-scene';
+    scene.className = 'breakfast-scene';
+    scene.innerHTML = BREAKFAST_SVG;
+    box.appendChild(scene);
+  }
   updateList();
   showScreen('list');
+  updateBreakfast();
 }
 
 // カードをタッチしたとき:できた ⇔ まだ を切り替える(まちがえても もどせる)
@@ -326,6 +340,7 @@ function toggleTask(id, card) {
   saveRecord();
   updateList();
   checkWarn();
+  updateBreakfast();         // ごはんをタッチしたら、その場で元の並びにもどる
   // こえ:ぜんぶできたら次へのさそい、そうでなければ「○○、できたね!」
   if (record.tasks[id]) {
     if (doneCount() === TASKS[session].length) {
@@ -350,6 +365,88 @@ function updateList() {
   const all = doneCount() === TASKS[session].length;
   $('btn-quiz').classList.toggle('hidden', !all);       // ぜんぶできたらボタンを出す
   $('list-message').classList.toggle('hidden', all);
+}
+
+// ============================================================
+// 朝ごはんタイマー
+//   朝の 6:45〜7:20(config.js の breakfast)で、ごはんがまだのとき:
+//     ・ごはんのカードだけにして、右に「くまが ごはんを たべている絵」を出す
+//     ・下に、のこり時間の色の帯を出す(6:45 でいっぱい → 7:15 でゼロ)
+//     ・絵のごはんも、帯と同じ割合でへっていき、7:15 で空になる
+//     ・おかず(たまごやき3つ・ウインナー3本)は、1つずつなくなっていく
+//   7:20 になるか、ごはんのカードをタッチすると、元の並びにもどる
+// ============================================================
+// いまタイマーを出すべきか調べる。出すなら { fraction:のこりの割合(1→0), leftSec:のこり秒 }、出さないなら null
+function breakfastInfo() {
+  const b = cfg.breakfast;
+  if (!b || b.enabled === false) return null;
+  if (session !== 'morning' || currentScreen !== 'list' || !record || record.tasks.gohan) return null;
+
+  // おとなメニューの「朝ごはんタイマーをためす」:30分を1分に短縮して動かす
+  if (testMode) {
+    if (!testMode.breakfast) return null;
+    const elapsed = (Date.now() - testMode.breakfast) / 1000;   // テスト開始からの秒数
+    if (elapsed >= 70) return null;                             // 60秒で空 → 10秒後に元の並びへ
+    const left = Math.max(0, 60 - elapsed);
+    return { fraction: left / 60, leftSec: left * 30 };         // 表示用の「のこり」は30倍にもどす
+  }
+
+  const start = toMinutes(b.start), empty = toMinutes(b.empty), end = toMinutes(b.end);
+  if (start === null || empty === null || end === null || empty <= start) return null;
+  const now = new Date();
+  const sec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();   // 0時からの秒数
+  if (sec < start * 60 || sec >= end * 60) return null;
+  const left = Math.max(0, empty * 60 - sec);
+  return { fraction: left / ((empty - start) * 60), leftSec: left };
+}
+
+// タイマーの表示を今の状態に合わせる(1秒ごと、またはカードをタッチしたときに呼ばれる)
+function updateBreakfast() {
+  const info = breakfastInfo();
+  const on = info !== null;
+  $('screen-list').classList.toggle('breakfast', on);
+  $('breakfast-timer').classList.toggle('hidden', !on);
+  $('list-message').textContent = on ? 'たべおわったら ごはんを タッチしてね' : 'できたら えを タッチしてね';
+
+  if (on) {
+    const f = Math.min(1, Math.max(0, info.fraction));
+    // 色の帯:長さ=のこりの割合、色=みどり(120)→きいろ(60)→あか(0)
+    $('bt-fill').style.width = (f * 100) + '%';
+    $('bt-fill').style.backgroundColor = `hsl(${Math.round(120 * f)}, 70%, 45%)`;
+    $('bt-label').textContent = f > 0 ? `あと ${Math.ceil(info.leftSec / 60)}ふん` : 'おしまい！';
+    // 絵のごはん:おちゃわんのふち(y=100)を基準に、たてにちぢめる
+    const rice = document.getElementById('bf-rice');
+    if (rice) rice.setAttribute('transform', `translate(0 100) scale(1 ${f.toFixed(3)}) translate(0 -100)`);
+    const scene = document.getElementById('breakfast-scene');
+    if (scene) {
+      scene.classList.toggle('empty', f <= 0);
+      // おかず(たまごやき・ウインナー):のこりの割合に合わせて、番号の大きいものから1つずつ消す
+      const items = scene.querySelectorAll('.bf-item');
+      items.forEach(el => {
+        const order = Number(el.dataset.order);
+        el.style.display = (f > (order + 0.5) / items.length) ? '' : 'none';
+      });
+    }
+
+    if (!breakfastOn) {
+      // タイマーが始まった:あいさつのかわりに案内を言う
+      breakfastEmptySaid = false;
+      greetPending = false;
+      if (f > 0 && $('warn-overlay').classList.contains('hidden')) {
+        say('あさごはんの じかんだよ。たべおわったら、ごはんを タッチしてね');
+      }
+    }
+    if (f <= 0 && !breakfastEmptySaid) {
+      // ゼロになった:1回だけ知らせる
+      breakfastEmptySaid = true;
+      tone(660, 0, .25); tone(523, .3, .4);
+      say('ごはんの じかんは、おしまいだよ。たべおわったら、ごはんを タッチしてね');
+    }
+  } else if (breakfastOn && session === 'morning' && currentScreen === 'list' && record && !record.tasks.gohan) {
+    // 時間切れで元の並びにもどった(ごはんはまだ)
+    say('ほかの やることも、はじめよう！');
+  }
+  breakfastOn = on;
 }
 
 // 注意(いそごう!)を出すかどうか決める
@@ -905,6 +1002,7 @@ $('parent').addEventListener('click', e => {
       id: testCount,
       session: act === 'test-evening' ? 'evening' : 'morning',
       warn: act === 'test-warn',
+      breakfast: act === 'test-breakfast' ? Date.now() : null,   // 朝ごはんタイマーのテスト開始時刻
     };
     closeParent();
     tick();

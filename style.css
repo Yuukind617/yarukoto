@@ -301,3 +301,37 @@ body.practice .screen { background: linear-gradient(#d5f5d0, #fffbe0); }
 .say-button svg { width: 100%; height: 100%; display: block; }
 /* 読み上げ中のこたえボタンを光らせる */
 .choice.reading { border-color: #ff7043; background: #fff3e0; transform: scale(1.04); transition: transform .15s; }
+
+/* ============================================================
+   朝ごはんタイマー
+   (#screen-list に breakfast が付いている間だけ、この見た目になる)
+   ============================================================ */
+/* ごはん以外のカードをかくす */
+#screen-list.breakfast .task-card:not([data-id="gohan"]) { display: none; }
+#screen-list.breakfast .task-card { max-width: 30vw; }
+#screen-list.breakfast .task-cards { padding: 2vh 0; gap: 3vw; }
+/* カードの右の絵(くまが ごはんを たべている) */
+.breakfast-scene { display: none; }
+#screen-list.breakfast .breakfast-scene {
+  display: flex; flex: 1.7; min-width: 0; align-items: center; justify-content: center;
+  background: #fff8e1; border-radius: 5vh; padding: 1.5vh 1vw; box-shadow: 0 1.2vh 0 rgba(0,0,0,.18); overflow: hidden;
+}
+.breakfast-scene svg { width: 100%; height: 100%; }
+/* たべている間の動き:くち もぐもぐ・スプーン 上下 */
+.bf-mouth { transform-box: fill-box; transform-origin: center; animation: chew .5s ease-in-out infinite alternate; }
+@keyframes chew { from { transform: scaleY(.3); } to { transform: scaleY(1.2); } }
+.bf-spoon { animation: scoop 1.6s ease-in-out infinite alternate; }
+@keyframes scoop { from { transform: translate(8px, 6px); } to { transform: translate(-8px, -6px); } }
+.bf-smile { display: none; }
+/* からっぽになったら:動きを止めて にっこり */
+.breakfast-scene.empty .bf-mouth, .breakfast-scene.empty .bf-bite { display: none; }
+.breakfast-scene.empty .bf-smile { display: block; }
+.breakfast-scene.empty .bf-spoon { animation: none; transform: translate(8px, 6px); }
+
+/* のこり時間の色の帯 */
+.breakfast-timer { flex: none; display: flex; align-items: center; gap: 2vw; height: 9vh; }
+.bt-track { flex: 1; height: 6.5vh; background: rgba(255,255,255,.85); border: .6vh solid #fff; border-radius: 4vh; overflow: hidden; box-shadow: 0 .6vh 0 rgba(0,0,0,.15); }
+/* 帯は左から右へのびていて、時間がたつと右がわからへっていく。色は みどり→きいろ→あか */
+.bt-fill { height: 100%; width: 100%; border-radius: 4vh; background: #43a047; transition: width 1s linear, background-color 1s linear; }
+.bt-label { flex: none; min-width: 22vw; text-align: right; font-size: 5.5vh; white-space: nowrap; }
+#screen-list.breakfast .list-footer { height: 9vh; }

@@ -33,6 +33,11 @@
     <div id="hurry-banner" class="hurry-banner hidden">いそごう！ じかんが なくなるよ</div>
     <!-- ここにカード(ごはん、はみがき…)が入る -->
     <div id="task-cards" class="task-cards"></div>
+    <!-- 朝ごはんタイマー:のこり時間を色の帯で見せる(ごはんの時間だけ出る) -->
+    <div id="breakfast-timer" class="breakfast-timer hidden">
+      <div class="bt-track"><div id="bt-fill" class="bt-fill"></div></div>
+      <div id="bt-label" class="bt-label"></div>
+    </div>
     <div class="list-footer">
       <div id="list-message" class="list-message">できたら えを タッチしてね</div>
       <button id="btn-quiz" class="big-button hidden">もんだいに ちょうせん！</button>
@@ -134,6 +139,7 @@
         <button class="p-btn" data-act="test-morning">朝をためす</button>
         <button class="p-btn" data-act="test-evening">夜をためす</button>
         <button class="p-btn" data-act="test-warn">朝＋注意をためす</button>
+        <button class="p-btn" data-act="test-breakfast">朝ごはんタイマーをためす(30分を1分に短縮)</button>
         <button class="p-btn gray" data-act="test-stop">テストをやめる</button>
         <span id="p-test-state" class="p-note"></span>
 

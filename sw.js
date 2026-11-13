@@ -7,7 +7,7 @@
 //   3. 電波があるときは、裏で新しい版を取りに行って保存しなおす
 //      → 設定などを書きかえた場合、「2回目に開いたとき」から新しくなる
 // ============================================================
-const CACHE = 'yarukoto-v5';
+const CACHE = 'yarukoto-v7';
 // 保存しておくファイルの一覧
 const FILES = ['./', 'index.html', 'style.css', 'config.js', 'voice.js', 'pictures.js', 'japan_map.js', 'app.js', 'icon.png', 'manifest.json'];
 
