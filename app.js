@@ -59,12 +59,14 @@ let videoChoices = null;   // この回に見せる3つの動画 [{name, url}]
 let testMode = null;       // おとなメニューの動作テスト中は {id, session, warn}
 let testCount = 0;         // テストを始めた回数(毎回あたらしい回として始めるため)
 let practice = null;       // もんだいだけモード中は {types:出す種類, count:せいかい数, key:始めたときの時間帯}
+let greetPending = false;  // 朝/夜のはじまりのあいさつを、まだ言っていない
 let lastAnswer = null;     // 直前のもんだいのこたえ(同じもんだいが続かないようにする)
 
 // よく使う小道具 ---------------------------------------------
 const $ = id => document.getElementById(id);                       // 部品を名前で探す
 const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min; // min〜maxの数
 const pick = arr => arr[rand(0, arr.length - 1)];                  // どれか1つえらぶ
+const sleep = ms => new Promise(r => setTimeout(r, ms));          // ms ミリ秒まつ
 function shuffle(arr) {                                            // ならびをまぜる
   const a = arr.slice();
   for (let i = a.length - 1; i > 0; i--) {
@@ -114,7 +116,16 @@ const sndTap     = () => { tone(660, 0, .08); };
 let alarmTimer = null;
 function startAlarm() {
   if (alarmTimer) return;
-  const ring = () => { tone(880, 0, .2, 'square', .15); tone(660, .25, .2, 'square', .15); };
+  let count = 0;
+  const ring = () => {
+    if (speaking()) return;                 // 声で読んでいる間は鳴らさない
+    // 1回目と、そのあと8回に1回は、音のかわりに声で知らせる
+    if (voiceOn() && count++ % 8 === 0) {
+      say('いそごう！ ' + document.querySelector('.warn-text').textContent);
+      return;
+    }
+    tone(880, 0, .2, 'square', .15); tone(660, .25, .2, 'square', .15);
+  };
   ring();
   alarmTimer = setInterval(ring, 1200);
 }
@@ -227,10 +238,21 @@ function tick() {
 
   lastWarn = st.warn;
   checkWarn();
+
+  // 朝/夜のはじまりのあいさつ(注意が出ているときは、注意のほうを優先して言わない)
+  if (greetPending) {
+    greetPending = false;
+    if ($('warn-overlay').classList.contains('hidden')) {
+      say(session === 'morning' ? 'おはよう！ あさの やること、はじめよう！'
+                                : 'こんばんは！ よるの やること、はじめよう！');
+    }
+  }
 }
 
 // 時間外の画面にする
 function goSleep() {
+  hush();
+  stopSayAlong();
   stopPlayer();
   stopAlarm();
   clearVideoChoices();
@@ -255,8 +277,12 @@ function startSession(st, key) {
   clearVideoChoices();
   document.body.className = session;     // 朝と夜で色を変える
 
-  if (record.hanamaru) showCalendar(false);   // もう花丸をもらっている → カレンダーから
-  else showList();                            // まだ → やることリストから
+  if (record.hanamaru) {
+    showCalendar(false);                      // もう花丸をもらっている → カレンダーから
+  } else {
+    showList();                               // まだ → やることリストから
+    greetPending = true;                      // あいさつは tick の最後で(注意が出るときは言わない)
+  }
 }
 
 // ============================================================
@@ -292,6 +318,7 @@ function toggleTask(id, card) {
     delete record.tasks[id];
     card.classList.remove('just-done');
     sndUndo();
+    hush();
   } else {
     record.tasks[id] = true;
     card.classList.add('just-done');   // 花丸を書くアニメーション
@@ -300,6 +327,15 @@ function toggleTask(id, card) {
   saveRecord();
   updateList();
   checkWarn();
+  // こえ:ぜんぶできたら次へのさそい、そうでなければ「○○、できたね!」
+  if (record.tasks[id]) {
+    if (doneCount() === TASKS[session].length) {
+      say('ぜんぶ できたね！ すごい！ もんだいに ちょうせんしよう！');
+    } else {
+      const task = TASKS[session].find(t => t.id === id);
+      say(task.label + '、できたね！');
+    }
+  }
 }
 
 // できた数をかぞえる
@@ -355,6 +391,8 @@ function makeMathQuiz() {
   const apples = n => `<div class="math-group">${svgWrap(COUNT_APPLE).repeat(n)}</div>`;
   return {
     question: 'あわせて いくつ？',
+    speech: `${a} たす ${b} は、いくつ？`,
+    praise: `せいかい！ ${a} たす ${b} は、${ans} だよ！`,
     picture: `<div class="math">
         <div class="math-apples">${apples(a)}<div class="math-plus">＋</div>${apples(b)}</div>
         <div class="math-formula">${a}＋${b}＝<span class="q">？</span></div>
@@ -386,6 +424,8 @@ function makeMapQuiz() {
       </div>`,
     choices: choices,
     answer: target.name,
+    speech: 'あかい ところは、どこかな？',
+    praise: `せいかい！ ここは、${target.name} だよ！`,
     // 画面に出したあと、こたえの県の位置と大きさを調べて地図を合わせる
     after: () => {
       const main = document.querySelector('#quiz-picture svg.main');
@@ -440,6 +480,8 @@ function makePictureQuiz() {
   return {
     question: 'これは なに？',
     picture: target.html,
+    speech: 'これは、なにかな？',
+    praise: `せいかい！ これは、${target.name} だよ！`,
     choices: shuffle(shuffle(others).slice(0, 3).concat(target.name)),
     answer: target.name,
   };
@@ -482,28 +524,30 @@ function showQuiz() {
         sndCorrect();
         $('quiz-result').textContent = 'せいかい！';
         $('quiz-result').classList.remove('hidden');
+        // こえ:効果音のあとに「せいかい! ○○ だよ!」と言う。
+        // 次の画面へは「言い終わる」と「最低の待ち時間」の両方がすんでから進む
+        const praised = sleep(700).then(() => say(quiz.praise));
         if (mode) {
-          // もんだいだけモード:★を1つふやして、すぐ次のもんだいへ(花丸・動画はなし)
+          // もんだいだけモード:★を1つふやして、次のもんだいへ(花丸・動画はなし)
           mode.count++;
           $('quiz-count').textContent = '★ ' + mode.count;
-          setTimeout(() => {
-            $('quiz-result').classList.add('hidden');
-            if (practice === mode) showQuiz();
-          }, 1500);
+          Promise.all([praised, sleep(1500)])
+            .then(() => { $('quiz-result').classList.add('hidden'); return sayAlong(quiz.answer); })
+            .then(() => { if (practice === mode) showQuiz(); });
           return;
         }
         record.quiz = true;
         record.hanamaru = true;      // もんだいができたら花丸
         saveRecord();
-        setTimeout(() => {
-          $('quiz-result').classList.add('hidden');
-          if (sessionKey === key && !practice) showCalendar(true);
-        }, 2200);
+        Promise.all([praised, sleep(2200)])
+          .then(() => { $('quiz-result').classList.add('hidden'); return sessionKey === key ? sayAlong(quiz.answer) : null; })
+          .then(() => { if (sessionKey === key && !practice) showCalendar(true); });
       } else {
         // ---- まちがい:そのボタンを灰色にして、もういちど えらべる ----
         btn.classList.add('wrong');
         sndWrong();
         $('quiz-question').textContent = 'もういちど かんがえてみよう';
+        say('ちがうよ。もういちど、かんがえてみよう');
       }
     });
     box.appendChild(btn);
@@ -511,7 +555,19 @@ function showQuiz() {
 
   showScreen('quiz');
   if (quiz.after) quiz.after();   // 画面に出してからでないとできない処理(地図の輪)
+
+  // こえ:もんだい文 → こたえを上から順に(読んでいるボタンを光らせる)
+  quizSpeech = [{ text: quiz.speech || quiz.question }];
+  if (!(cfg.voice && cfg.voice.read_choices === false)) {
+    box.querySelectorAll('.choice').forEach(btn => quizSpeech.push({ text: btn.textContent, el: btn }));
+  }
+  $('btn-say').classList.toggle('hidden', !voiceOn());
+  sleep(300).then(() => { if (currentScreen === 'quiz' && !locked) say(quizSpeech); });
 }
+
+// 「もういちど きく」ボタン:いまのもんだいを、もう一度読む
+let quizSpeech = [];
+$('btn-say').addEventListener('click', () => say(quizSpeech));
 
 // ============================================================
 // もんだいだけモード(おとなメニューから切り替える)
@@ -520,8 +576,8 @@ function showQuiz() {
 // ============================================================
 // types: 出す種類の一覧(例 ['math'])。null なら config.js の quiz_types どおり
 function startPractice(types) {
+  testMode = null;                      // 動作テスト中だったらやめる(先にやめて、本当の時間帯を見る)
   const st = currentStatus();
-  testMode = null;                      // 動作テスト中だったらやめる
   stopPlayer();
   stopAlarm();
   clearVideoChoices();
@@ -540,6 +596,8 @@ function startPractice(types) {
 
 // もんだいだけモードを終わる(このあと tick が、今の時間に合った画面にする)
 function stopPractice() {
+  hush();
+  stopSayAlong();
   practice = null;
   sessionKey = null;
   $('quiz-result').classList.add('hidden');
@@ -593,6 +651,7 @@ function showCalendar(animate) {
     $('stamp-mark').innerHTML = HANAMARU_SVG;
     $('stamp').classList.remove('hidden');
     sndStamp();
+    sleep(1500).then(() => say('はなまる！ よくできました！'));
     setTimeout(() => $('stamp').classList.add('hidden'), 3400);
   }
 }
@@ -678,10 +737,12 @@ async function showVideos() {
     box.appendChild(card);
   });
   showScreen('videos');
+  say('どれを みる？');
 }
 
 // えらんだ動画を再生する
 function playVideo(url) {
+  hush();                               // 動画の音とかさならないよう、読み上げを止める
   $('video-cards').innerHTML = '';      // 表紙用の動画を片づけてメモリを空ける
   const player = $('player');
   player.src = url;
@@ -710,11 +771,15 @@ function finishVideo() {
     saveRecord();
   }
   showCalendar(false);
+  // もう見られる動画がなければ、おわりのあいさつ
+  if (videosLeft() <= 0) {
+    say(session === 'morning' ? 'よくできました！ いってらっしゃい！' : 'よくできました！ おやすみなさい。');
+  }
 }
 
 // ============================================================
 // おとなメニュー(画面の左下を2秒ながおしすると開く)
-//   動画の追加・削除、もんだいだけモード、動作テスト、記録の削除ができる
+//   動画の追加・削除、読み上げ、こえで いう、もんだいだけモード、動作テスト、記録の削除ができる
 // ============================================================
 // メニューを開く前の「おとなの確認」:かけざんの4たく
 function openGate() {
@@ -742,6 +807,8 @@ function openParentMenu() {
   $('parent-menu').classList.remove('hidden');
   $('p-status').textContent = '';
   $('p-test-state').textContent = testMode ? 'テスト中です' : '';
+  $('p-voice-state').textContent = '読み上げ:' + (voiceOn() ? 'オン' : 'オフ');
+  $('p-mic-state').textContent = 'こえで いう:' + (micModeOn() ? 'オン' : 'オフ');
   $('p-practice-state').textContent = practice ? 'いま、もんだいだけモードです' : '';
   refreshParentVideos();
 }
@@ -814,6 +881,18 @@ $('parent').addEventListener('click', e => {
   const act = btn.dataset.act;
   if (act === 'close') {
     closeParent();
+  } else if (act === 'voice-on' || act === 'voice-off') {
+    setVoiceOn(act === 'voice-on');
+    $('p-voice-state').textContent = '読み上げ:' + (voiceOn() ? 'オン' : 'オフ');
+  } else if (act === 'voice-test') {
+    if (!('speechSynthesis' in window)) $('p-voice-state').textContent = 'この端末では読み上げが使えません';
+    else if (!voiceOn()) $('p-voice-state').textContent = '読み上げがオフになっています';
+    else say('こんにちは！ これは こえの テストだよ。');
+  } else if (act === 'mic-on' || act === 'mic-off') {
+    setMicModeOn(act === 'mic-on');
+    $('p-mic-state').textContent = 'こえで いう:' + (micModeOn() ? 'オン' : 'オフ');
+  } else if (act === 'mic-test') {
+    micTest(text => { $('p-mic-state').textContent = text; });
   } else if (act === 'practice-stop') {
     // もんだいだけモードをやめて、今の時間に合った画面にもどす
     stopPractice();

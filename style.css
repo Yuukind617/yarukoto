@@ -290,3 +290,47 @@ body.practice .screen { background: linear-gradient(#d5f5d0, #fffbe0); }
   position: fixed; right: calc(2.5vw + env(safe-area-inset-right)); top: calc(2.5vh + env(safe-area-inset-top));
   height: 12vh; line-height: 12vh; font-size: 6vh; color: #f57c00;
 }
+
+/* もういちど きく ボタン(もんだい文の左) */
+.say-button {
+  position: fixed; left: calc(2.5vw + env(safe-area-inset-left)); top: calc(2.5vh + env(safe-area-inset-top));
+  width: 11vh; height: 11vh; border: none; border-radius: 50%;
+  background: #ff7043; box-shadow: 0 .8vh 0 #c63f17; padding: 1.8vh; cursor: none;
+}
+.say-button:active { transform: translateY(.5vh); box-shadow: 0 .3vh 0 #c63f17; }
+.say-button svg { width: 100%; height: 100%; display: block; }
+/* 読み上げ中のこたえボタンを光らせる */
+.choice.reading { border-color: #ff7043; background: #fff3e0; transform: scale(1.04); transition: transform .15s; }
+
+/* ============================================================
+   こえで いう
+   ============================================================ */
+.repeat {
+  position: fixed; inset: 0; z-index: 90;
+  display: flex; flex-direction: column; align-items: center; justify-content: space-evenly;
+  background: rgba(255,255,255,.97);
+}
+.repeat-title { font-size: 7vh; color: #3e3e3e; }
+.repeat.good .repeat-title { color: #e53935; animation: pop .5s cubic-bezier(.2,2,.4,1) both; }
+.repeat-word { display: flex; gap: 1.5vw; line-height: 1.2; }
+.repeat-cell {
+  min-width: 1.15em; padding: 0 .1em; text-align: center; border-radius: .18em;
+  border: .05em solid #cfd8dc; background: #fff; color: #3e3e3e;
+}
+.repeat-cell.todo { background: #eceff1; }
+.repeat-cell.done { color: #43a047; border-color: #a5d6a7; }
+.repeat-cell.now  { color: #ff7043; border-color: #ff7043; background: #fff3e0; animation: bounce 1s ease-in-out infinite; }
+.repeat.good .repeat-cell { color: #e53935; border-color: #e53935; animation: none; }
+/* マイクの絵と、声の大きさの輪 */
+.repeat-mic { position: relative; width: 16vh; height: 16vh; }
+.repeat-mic svg { position: relative; width: 100%; height: 100%; padding: 2.5vh; background: #ff7043; border-radius: 50%; }
+.repeat-level { position: absolute; inset: 0; border-radius: 50%; background: rgba(255,112,67,.3); transition: transform .05s; }
+.repeat.no-mic .repeat-mic { display: none; }
+/* すすむ(おとな用・小さめ) / いえた!(マイクがないとき・大きめ) */
+.repeat-skip {
+  position: fixed; right: calc(2.5vw + env(safe-area-inset-right)); bottom: calc(2.5vh + env(safe-area-inset-bottom));
+  font: inherit; font-size: 3.2vh; color: #fff; background: #90a4ae; border: none; border-radius: 2vh; padding: 1vh 2vw; cursor: none;
+}
+.repeat.no-mic .repeat-skip {
+  position: static; font-size: 7vh; background: #66bb6a; padding: 2vh 6vw; border-radius: 4vh; box-shadow: 0 1vh 0 #388e3c;
+}

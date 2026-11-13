@@ -42,6 +42,11 @@
   <!-- ③ もんだいの画面 -->
   <section id="screen-quiz" class="screen">
     <div id="quiz-question" class="quiz-question"></div>
+    <!-- もういちど きく(スピーカーの絵) -->
+    <button id="btn-say" class="say-button hidden" aria-label="もういちど きく">
+      <svg viewBox="0 0 100 100"><path d="M14 38 H32 L56 16 V84 L32 62 H14 Z" fill="#fff"/>
+        <path d="M68 34 Q78 50 68 66 M78 24 Q96 50 78 76" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round"/></svg>
+    </button>
     <div class="quiz-body">
       <div id="quiz-picture" class="quiz-picture"></div>   <!-- 絵や地図 -->
       <div id="quiz-choices" class="quiz-choices"></div>   <!-- 4つのこたえ -->
@@ -77,6 +82,19 @@
     <button id="btn-stop" class="stop-button">おわる</button>
   </section>
 
+  <!-- こえで いう(せいかいのあとに、こたえを1文字ずつ声に出す) -->
+  <div id="repeat" class="repeat hidden">
+    <div id="repeat-title" class="repeat-title"></div>
+    <div id="repeat-word" class="repeat-word"></div>
+    <!-- マイクの絵。まわりの輪が声の大きさで大きくなる -->
+    <div class="repeat-mic">
+      <div id="repeat-level" class="repeat-level"></div>
+      <svg viewBox="0 0 100 100"><rect x="36" y="12" width="28" height="48" rx="14" fill="#fff"/>
+        <path d="M26 46 Q26 72 50 72 Q74 72 74 46 M50 72 V86 M36 88 H64" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round"/></svg>
+    </div>
+    <button id="repeat-skip" class="repeat-skip">すすむ</button>
+  </div>
+
   <!-- 注意(いそごう！)の大きな表示。タッチで消える -->
   <div id="warn-overlay" class="warn-overlay hidden">
     <div class="warn-box">
@@ -111,6 +129,18 @@
         </label>
         <div id="p-status" class="p-note"></div>
 
+        <h3>こえ(読み上げ)</h3>
+        <button class="p-btn" data-act="voice-on">オン</button>
+        <button class="p-btn gray" data-act="voice-off">オフ</button>
+        <button class="p-btn" data-act="voice-test">こえのテスト</button>
+        <span id="p-voice-state" class="p-note"></span>
+
+        <h3>こえで いう(せいかいのあと、こたえを1文字ずつ声に出します)</h3>
+        <button class="p-btn" data-act="mic-on">オン</button>
+        <button class="p-btn gray" data-act="mic-off">オフ</button>
+        <button class="p-btn" data-act="mic-test">マイクのテスト(5秒)</button>
+        <div id="p-mic-state" class="p-note"></div>
+
         <h3>もんだいだけモード(時間外や土日でも使えます。花丸・動画はありません)</h3>
         <button class="p-btn" data-act="practice-all">ぜんぶ</button>
         <button class="p-btn" data-act="practice-math">たしざんだけ</button>
@@ -138,10 +168,12 @@
   <!-- たて向きのときに出す案内 -->
   <div id="rotate" class="rotate">iPadを よこむきに してね</div>
 
-  <!-- 読み込む順番が大事:設定 → 絵 → 地図 → 本体 -->
+  <!-- 読み込む順番が大事:設定 → こえ → 絵 → 地図 → 本体 -->
   <script src="config.js"></script>
+  <script src="voice.js"></script>
   <script src="pictures.js"></script>
   <script src="japan_map.js"></script>
   <script src="app.js"></script>
+  <script src="mic.js"></script>   <!-- app.js の部品を使うので、app.js のあと -->
 </body>
 </html>
