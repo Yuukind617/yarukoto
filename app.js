@@ -252,7 +252,6 @@ function tick() {
 // 時間外の画面にする
 function goSleep() {
   hush();
-  stopSayAlong();
   stopPlayer();
   stopAlarm();
   clearVideoChoices();
@@ -531,17 +530,19 @@ function showQuiz() {
           // もんだいだけモード:★を1つふやして、次のもんだいへ(花丸・動画はなし)
           mode.count++;
           $('quiz-count').textContent = '★ ' + mode.count;
-          Promise.all([praised, sleep(1500)])
-            .then(() => { $('quiz-result').classList.add('hidden'); return sayAlong(quiz.answer); })
-            .then(() => { if (practice === mode) showQuiz(); });
+          Promise.all([praised, sleep(1500)]).then(() => {
+            $('quiz-result').classList.add('hidden');
+            if (practice === mode) showQuiz();
+          });
           return;
         }
         record.quiz = true;
         record.hanamaru = true;      // もんだいができたら花丸
         saveRecord();
-        Promise.all([praised, sleep(2200)])
-          .then(() => { $('quiz-result').classList.add('hidden'); return sessionKey === key ? sayAlong(quiz.answer) : null; })
-          .then(() => { if (sessionKey === key && !practice) showCalendar(true); });
+        Promise.all([praised, sleep(2200)]).then(() => {
+          $('quiz-result').classList.add('hidden');
+          if (sessionKey === key && !practice) showCalendar(true);
+        });
       } else {
         // ---- まちがい:そのボタンを灰色にして、もういちど えらべる ----
         btn.classList.add('wrong');
@@ -597,7 +598,6 @@ function startPractice(types) {
 // もんだいだけモードを終わる(このあと tick が、今の時間に合った画面にする)
 function stopPractice() {
   hush();
-  stopSayAlong();
   practice = null;
   sessionKey = null;
   $('quiz-result').classList.add('hidden');
@@ -779,7 +779,7 @@ function finishVideo() {
 
 // ============================================================
 // おとなメニュー(画面の左下を2秒ながおしすると開く)
-//   動画の追加・削除、読み上げ、こえで いう、もんだいだけモード、動作テスト、記録の削除ができる
+//   動画の追加・削除、読み上げ、もんだいだけモード、動作テスト、記録の削除ができる
 // ============================================================
 // メニューを開く前の「おとなの確認」:かけざんの4たく
 function openGate() {
@@ -808,7 +808,6 @@ function openParentMenu() {
   $('p-status').textContent = '';
   $('p-test-state').textContent = testMode ? 'テスト中です' : '';
   $('p-voice-state').textContent = '読み上げ:' + (voiceOn() ? 'オン' : 'オフ');
-  $('p-mic-state').textContent = 'こえで いう:' + (micModeOn() ? 'オン' : 'オフ');
   $('p-practice-state').textContent = practice ? 'いま、もんだいだけモードです' : '';
   refreshParentVideos();
 }
@@ -888,11 +887,6 @@ $('parent').addEventListener('click', e => {
     if (!('speechSynthesis' in window)) $('p-voice-state').textContent = 'この端末では読み上げが使えません';
     else if (!voiceOn()) $('p-voice-state').textContent = '読み上げがオフになっています';
     else say('こんにちは！ これは こえの テストだよ。');
-  } else if (act === 'mic-on' || act === 'mic-off') {
-    setMicModeOn(act === 'mic-on');
-    $('p-mic-state').textContent = 'こえで いう:' + (micModeOn() ? 'オン' : 'オフ');
-  } else if (act === 'mic-test') {
-    micTest(text => { $('p-mic-state').textContent = text; });
   } else if (act === 'practice-stop') {
     // もんだいだけモードをやめて、今の時間に合った画面にもどす
     stopPractice();

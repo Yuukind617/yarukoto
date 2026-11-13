@@ -5,13 +5,13 @@
 // ============================================================
 const CONFIG = {
   // true:月〜金だけ動く / false:毎日動く
-  weekdays_only: true,
+  weekdays_only: false,
 
   // 朝の時間  start:はじまり  end:おわり  warn:注意を出す時刻(''なら注意なし)
   morning: { start: '06:30', end: '08:10', warn: '07:30' },
 
   // 夜の時間
-  evening: { start: '18:00', end: '20:15', warn: '' },
+  evening: { start: '18:00', end: '21:00', warn: '' },
 
   // 注意を出す条件
   //   'none_done' : 1つも終わっていないとき
@@ -35,13 +35,6 @@ const CONFIG = {
   //   pitch        : 声の高さ(1がふつう)
   //   read_choices : true でこたえ4つも順番に読む / false でもんだい文だけ読む
   voice: { enabled: true, rate: 0.9, pitch: 1.1, read_choices: true },
-
-  // こえで いう(せいかいのあと、こたえを1文字ずつ声に出してもらう)
-  //   enabled     : true で使う / false で使わない(おとなメニューでも切り替えられます)
-  //   threshold   : これより大きい音を「声」とみなす。反応しにくいときは小さく(0.02 など)、
-  //                 まわりの音で勝手に進むときは大きく(0.08 など)。おとなメニューの「マイクのテスト」が目安
-  //   timeout_sec : この秒数、声がなければもう一度読み上げる(2回目のあとは次へ進む)
-  voice_input: { enabled: true, threshold: 0.04, timeout_sec: 10 },
 
   // 「これは なに?」に追加する自分の絵
   //   my_pictures フォルダに画像を入れて、ここにファイル名を書きます
