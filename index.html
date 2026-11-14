@@ -21,6 +21,7 @@
   <section id="screen-sleep" class="screen active">
     <div id="sleep-clock" class="sleep-clock"></div>
     <div class="sleep-text">じかんに なったら はじまるよ</div>
+    <div id="voice-credit" class="voice-credit"></div>   <!-- VOICEVOX のクレジット -->
   </section>
 
   <!-- ② やることリストの画面 -->
@@ -29,7 +30,7 @@
       <div class="title"><span id="list-icon" class="title-icon"></span><span id="list-title"></span></div>
       <div id="clock" class="clock"></div>
     </header>
-    <!-- 7時半の注意が出ているあいだ表示する帯 -->
+    <!-- 朝の注意(config.js の morning.warn)が出ているあいだ表示する帯 -->
     <div id="hurry-banner" class="hurry-banner hidden">いそごう！ じかんが なくなるよ</div>
     <!-- ここにカード(ごはん、はみがき…)が入る -->
     <div id="task-cards" class="task-cards"></div>

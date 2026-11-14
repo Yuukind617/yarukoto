@@ -1,8 +1,12 @@
 // ============================================================
 // こえ(読み上げ)
 //
-// iPad に最初から入っている「音声読み上げ」の機能(Web Speech API)を使います。
-// 声は iPad の中で作られるので、インターネットとは通信しません。
+// 声は2とおりあります。
+//   1. VOICEVOX で作った声(voices フォルダがあるとき)… 人の声に近い
+//      voice_tools/make_voices.bat で作り、voices フォルダごと GitHub に置きます
+//   2. iPad の「音声読み上げ」(Web Speech API)… VOICEVOX の声がない言葉や、
+//      voices フォルダがないときに使う
+// どちらも iPad の中で再生するので、インターネットとは通信しません。
 //
 // 【使い方(app.js から呼ぶ)】
 //   say('できたね！')                       … 1つの文を読む
@@ -23,7 +27,7 @@ const VOICE_SETTING_KEY = 'yarukoto_voice';   // おとなメニューのオン/
 // 読み上げがオンかどうか
 //   おとなメニューで切り替えていればそちらを優先、なければ config.js の設定
 function voiceOn() {
-  if (!('speechSynthesis' in window)) return false;      // 読み上げが使えない環境
+  if (!('speechSynthesis' in window) && !voicePack) return false;   // 声を出す方法がない環境
   try {
     const saved = localStorage.getItem(VOICE_SETTING_KEY);
     if (saved === 'on') return true;
@@ -52,6 +56,74 @@ if ('speechSynthesis' in window) {
   speechSynthesis.addEventListener('voiceschanged', pickVoice);
 }
 
+// ------------------------------------------------------------
+// VOICEVOX の声(voices/manifest.json と voices_1.wav など)
+//   manifest.json の clips に { 言葉: [ファイル番号, 始まり(秒), 長さ(秒)] } が書いてあり、
+//   大きな音声ファイルの、その部分だけを再生する
+// ------------------------------------------------------------
+let voicePack = null;        // 読み込みが終わったら { credit, clips, buffers }
+let clipSource = null;       // いま再生している音
+
+// 音を鳴らす係(app.js の audioCtx)を用意する
+function ensureAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+// アプリを開いたときに、裏で声のファイルを読みこんでおく(ないときは何もしない)
+async function loadVoicePack() {
+  try {
+    const res = await fetch('voices/manifest.json', { cache: 'no-cache' });
+    if (!res.ok) return;                        // voices フォルダがない → iPad の読み上げを使う
+    const m = await res.json();
+    const ctx = ensureAudioCtx();
+    const buffers = [];
+    for (const file of m.files) {
+      // ?v= を付けると、作りなおしたときに新しい声を読みこむ(sw.js が古いものを片づける)
+      const data = await (await fetch(`voices/${file}?v=${m.version}`)).arrayBuffer();
+      // Safari の古い書き方(コールバック)にも対応する
+      buffers.push(await new Promise((ok, ng) => ctx.decodeAudioData(data, ok, ng)));
+    }
+    voicePack = { credit: m.credit || 'VOICEVOX', clips: m.clips || {}, buffers };
+    showVoiceCredit();
+  } catch (e) {
+    voicePack = null;                           // 読めなければ iPad の読み上げを使う
+  }
+}
+
+// クレジット(VOICEVOX:キャラクター名)を画面に出す
+function showVoiceCredit() {
+  const el = document.getElementById('voice-credit');
+  if (el) el.textContent = voicePack ? 'こえ:' + voicePack.credit : '';
+}
+
+// VOICEVOX の声を1つ再生する。その言葉の声がなければ false を返す
+function playClip(text, turn) {
+  const clip = voicePack && voicePack.clips[text];
+  if (!clip) return null;
+  return new Promise(resolve => {
+    if (turn !== speechTurn) return resolve();
+    const [fileNo, start, dur] = clip;
+    const src = audioCtx.createBufferSource();
+    src.buffer = voicePack.buffers[fileNo];
+    src.connect(audioCtx.destination);
+    let finished = false;
+    const done = () => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(guard);
+      if (clipSource === src) clipSource = null;
+      resolve();
+    };
+    src.onended = done;
+    // まだ画面をタッチしていなくて音が出せないときも、止まらないようにする安全装置
+    const guard = setTimeout(done, (dur + 0.5) * 1000);
+    clipSource = src;
+    if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+    src.start(0, start, dur);
+  });
+}
+
 // いま読んでいる「回」の番号。新しく読みはじめたら古い回は止める
 let speechTurn = 0;
 let readingEl = null;          // いま光らせているボタン
@@ -66,11 +138,20 @@ function clearReading() {
 function hush() {
   speechTurn++;
   clearReading();
+  if (clipSource) {                         // VOICEVOX の声を止める
+    const src = clipSource;
+    clipSource = null;
+    try { src.stop(); } catch (e) { }
+  }
   if ('speechSynthesis' in window) speechSynthesis.cancel();
 }
 
 // 1つの文を読む。読み終わったら(または止められたら)終わる
 function speakOne(text, turn) {
+  // VOICEVOX の声があれば、そちらを使う
+  const clip = playClip(text, turn);
+  if (clip) return clip;
+  if (!('speechSynthesis' in window)) return Promise.resolve();
   return new Promise(resolve => {
     if (turn !== speechTurn) return resolve();
     const u = new SpeechSynthesisUtterance(text);
@@ -114,7 +195,7 @@ async function say(parts) {
 
 // いま読んでいる途中か
 function speaking() {
-  return 'speechSynthesis' in window && speechSynthesis.speaking;
+  return !!clipSource || ('speechSynthesis' in window && speechSynthesis.speaking);
 }
 
 // iPad で声を出せるようにする:最初のタッチのときに、音のない読み上げを1回する
@@ -126,3 +207,6 @@ document.addEventListener('pointerdown', () => {
   u.volume = 0;
   speechSynthesis.speak(u);
 }, true);
+
+// アプリを開いたら、VOICEVOX の声を読みこみはじめる
+loadVoicePack();

@@ -7,7 +7,7 @@
 //   3. 電波があるときは、裏で新しい版を取りに行って保存しなおす
 //      → 設定などを書きかえた場合、「2回目に開いたとき」から新しくなる
 // ============================================================
-const CACHE = 'yarukoto-v7';
+const CACHE = 'yarukoto-v8';
 // 保存しておくファイルの一覧
 const FILES = ['./', 'index.html', 'style.css', 'config.js', 'voice.js', 'pictures.js', 'japan_map.js', 'app.js', 'icon.png', 'manifest.json'];
 
@@ -25,9 +25,31 @@ self.addEventListener('activate', e => {
   );
 });
 
+// VOICEVOX の声のファイル(voices/voices_1.wav?v=作った日時)
+//   大きいので、毎回取りなおさない。保存してあればそれを使い、
+//   ない(作りなおして ?v= が変わった)ときだけ取りに行って、古い版は消す
+async function voiceFile(request) {
+  const cache = await caches.open(CACHE);
+  const saved = await cache.match(request);           // ?v= までふくめて同じものを探す
+  if (saved) return saved;
+  const res = await fetch(request);
+  if (res.ok) {
+    const path = new URL(request.url).pathname;
+    for (const old of await cache.keys()) {           // 同じファイルの古い版を消す
+      if (new URL(old.url).pathname === path) await cache.delete(old);
+    }
+    await cache.put(request, res.clone());
+  }
+  return res;
+}
+
 // ファイルが必要になったとき
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+  if (/\/voices\/[^/]+\.wav$/.test(new URL(e.request.url).pathname)) {
+    e.respondWith(voiceFile(e.request));
+    return;
+  }
   e.respondWith(
     caches.open(CACHE).then(async cache => {
       const saved = await cache.match(e.request, { ignoreSearch: true });

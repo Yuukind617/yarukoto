@@ -369,12 +369,12 @@ function updateList() {
 
 // ============================================================
 // 朝ごはんタイマー
-//   朝の 6:45〜7:20(config.js の breakfast)で、ごはんがまだのとき:
+//   朝の start〜end(config.js の breakfast)で、ごはんがまだのとき:
 //     ・ごはんのカードだけにして、右に「くまが ごはんを たべている絵」を出す
-//     ・下に、のこり時間の色の帯を出す(6:45 でいっぱい → 7:15 でゼロ)
-//     ・絵のごはんも、帯と同じ割合でへっていき、7:15 で空になる
+//     ・下に、のこり時間の色の帯を出す(start でいっぱい → empty でゼロ)
+//     ・絵のごはんも、帯と同じ割合でへっていき、empty で空になる
 //     ・おかず(たまごやき3つ・ウインナー3本)は、1つずつなくなっていく
-//   7:20 になるか、ごはんのカードをタッチすると、元の並びにもどる
+//   end になるか、ごはんのカードをタッチすると、元の並びにもどる
 // ============================================================
 // いまタイマーを出すべきか調べる。出すなら { fraction:のこりの割合(1→0), leftSec:のこり秒 }、出さないなら null
 function breakfastInfo() {
@@ -904,13 +904,19 @@ function openParentMenu() {
   $('parent-menu').classList.remove('hidden');
   $('p-status').textContent = '';
   $('p-test-state').textContent = testMode ? 'テスト中です' : '';
-  $('p-voice-state').textContent = '読み上げ:' + (voiceOn() ? 'オン' : 'オフ');
+  $('p-voice-state').textContent = voiceStateText();
   $('p-practice-state').textContent = practice ? 'いま、もんだいだけモードです' : '';
   refreshParentVideos();
 }
 
 function closeParent() {
   $('parent').classList.add('hidden');
+}
+
+// おとなメニューに出す「こえ」の状態
+function voiceStateText() {
+  if (!voiceOn()) return '読み上げ:オフ';
+  return '読み上げ:オン(' + (voicePack ? voicePack.credit : 'iPad の声') + ')';
 }
 
 // メニューの中の動画一覧を作りなおす
@@ -979,9 +985,9 @@ $('parent').addEventListener('click', e => {
     closeParent();
   } else if (act === 'voice-on' || act === 'voice-off') {
     setVoiceOn(act === 'voice-on');
-    $('p-voice-state').textContent = '読み上げ:' + (voiceOn() ? 'オン' : 'オフ');
+    $('p-voice-state').textContent = voiceStateText();
   } else if (act === 'voice-test') {
-    if (!('speechSynthesis' in window)) $('p-voice-state').textContent = 'この端末では読み上げが使えません';
+    if (!('speechSynthesis' in window) && !voicePack) $('p-voice-state').textContent = 'この端末では読み上げが使えません';
     else if (!voiceOn()) $('p-voice-state').textContent = '読み上げがオフになっています';
     else say('こんにちは！ これは こえの テストだよ。');
   } else if (act === 'practice-stop') {
