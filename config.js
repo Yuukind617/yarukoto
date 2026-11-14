@@ -8,17 +8,17 @@ const CONFIG = {
   weekdays_only: false,
 
   // 朝の時間  start:はじまり  end:おわり  warn:注意を出す時刻(''なら注意なし)
-  morning: { start: '06:30', end: '08:10', warn: '07:30' },
+  morning: { start: '06:30', end: '08:20', warn: '07:35' },
 
   // 朝ごはんタイマー(朝だけ。ごはんのカードがまだのときに出ます)
   //   start : ごはんのカードだけの表示になり、タイマーが始まる時刻
   //   empty : タイマーがゼロになり、絵のごはんが空になる時刻
   //   end   : 元のカードの並びにもどる時刻(それより前でも、ごはんをタッチすればもどります)
   //   enabled を false にすると、タイマーを使いません
-  breakfast: { enabled: true, start: '06:45', empty: '07:15', end: '07:20' },
+  breakfast: { enabled: true, start: '06:45', empty: '07:30', end: '07:35' },
 
   // 夜の時間
-  evening: { start: '18:00', end: '21:00', warn: '' },
+  evening: { start: '18:00', end: '20:30', warn: '' },
 
   // 注意を出す条件
   //   'none_done' : 1つも終わっていないとき
