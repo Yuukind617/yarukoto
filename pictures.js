@@ -339,3 +339,182 @@ const BREAKFAST_SVG = `<svg viewBox="0 0 270 150" xmlns="http://www.w3.org/2000/
     <circle cx="114" cy="110" r="11" fill="#c98d5a" ${S}/>
   </g>
 </svg>`;
+
+// ------------------------------------------------------------
+// クイズ用:どうぶつの絵(かおの絵。ペンギンだけ ぜんしん)
+// ------------------------------------------------------------
+// 目を2つ描く(x1, x2:左右の位置  y:高さ  r:大きさ)
+function eyes(x1, x2, y, r = 3.5) {
+  return `<circle cx="${x1}" cy="${y}" r="${r}" fill="#333"/><circle cx="${x2}" cy="${y}" r="${r}" fill="#333"/>`;
+}
+// ライオンのたてがみ(ギザギザの丸)を計算して作る
+function manePoints() {
+  const pts = [];
+  for (let i = 0; i < 32; i++) {
+    const r = (i % 2 === 0) ? 46 : 37;                 // 外と内を交互に
+    const a = (i / 32) * 2 * Math.PI;
+    pts.push((50 + r * Math.cos(a)).toFixed(1) + ',' + (52 + r * Math.sin(a)).toFixed(1));
+  }
+  return pts.join(' ');
+}
+
+const ANIMALS = [
+  { name: 'いぬ', svg: `
+    <ellipse cx="50" cy="52" rx="32" ry="30" fill="#e0b27a" ${S}/>
+    <path d="M24 26 Q6 36 12 64 Q24 68 30 42Z" fill="#8d6e63" ${S}/>
+    <path d="M76 26 Q94 36 88 64 Q76 68 70 42Z" fill="#8d6e63" ${S}/>
+    <ellipse cx="50" cy="65" rx="16" ry="12" fill="#fff3e0"/>
+    ${eyes(38, 62, 46)}
+    <ellipse cx="50" cy="59" rx="5.5" ry="4" fill="#333"/>
+    <path d="M50 63 V68 M42 69 Q50 76 58 69" fill="none" ${S}/>` },
+
+  { name: 'ねこ', svg: `
+    <path d="M20 44 L22 10 L48 28Z" fill="#ffb74d" ${S}/>
+    <path d="M80 44 L78 10 L52 28Z" fill="#ffb74d" ${S}/>
+    <ellipse cx="50" cy="56" rx="35" ry="30" fill="#ffb74d" ${S}/>
+    ${eyes(37, 63, 52)}
+    <path d="M46.5 60 H53.5 L50 64.5Z" fill="#f06292"/>
+    <path d="M50 64.5 Q45 71 40 67 M50 64.5 Q55 71 60 67" fill="none" ${S}/>
+    <path d="M30 62 H10 M30 67 L11 73 M70 62 H90 M70 67 L89 73" stroke="#4a4a4a" stroke-width="1.8" stroke-linecap="round"/>` },
+
+  { name: 'うさぎ', svg: `
+    <ellipse cx="36" cy="26" rx="10" ry="23" fill="#fff" ${S}/><ellipse cx="36" cy="28" rx="4.5" ry="15" fill="#f8bbd0"/>
+    <ellipse cx="64" cy="26" rx="10" ry="23" fill="#fff" ${S}/><ellipse cx="64" cy="28" rx="4.5" ry="15" fill="#f8bbd0"/>
+    <circle cx="50" cy="64" r="30" fill="#fff" ${S}/>
+    ${eyes(39, 61, 60)}
+    <circle cx="30" cy="70" r="6" fill="#f8bbd0" opacity=".8"/><circle cx="70" cy="70" r="6" fill="#f8bbd0" opacity=".8"/>
+    <ellipse cx="50" cy="68" rx="3.5" ry="2.5" fill="#f06292"/>
+    <path d="M50 71 Q45 77 41 73 M50 71 Q55 77 59 73" fill="none" ${S}/>` },
+
+  { name: 'ぞう', svg: `
+    <ellipse cx="19" cy="44" rx="17" ry="26" fill="#b0bec5" ${S}/><ellipse cx="20" cy="44" rx="9" ry="17" fill="#cfd8dc"/>
+    <ellipse cx="81" cy="44" rx="17" ry="26" fill="#b0bec5" ${S}/><ellipse cx="80" cy="44" rx="9" ry="17" fill="#cfd8dc"/>
+    <ellipse cx="50" cy="42" rx="28" ry="30" fill="#b0bec5" ${S}/>
+    <path d="M41 56 Q38 88 56 92 Q68 92 66 80 Q57 84 58 56Z" fill="#b0bec5"/>
+    <path d="M41 60 Q38 88 56 92 Q68 92 66 80 Q57 84 58 60" fill="none" ${S}/>
+    <path d="M44 72 H55 M45 80 H55" stroke="#90a4ae" stroke-width="2" stroke-linecap="round"/>
+    ${eyes(37, 63, 40)}` },
+
+  { name: 'きりん', svg: `
+    <rect x="39" y="62" width="22" height="42" fill="#fdd835" ${S}/>
+    <circle cx="46" cy="82" r="4" fill="#a1663a"/><circle cx="55" cy="93" r="4" fill="#a1663a"/>
+    <path d="M40 22 V8 M60 22 V8" stroke="#a1663a" stroke-width="4.5" stroke-linecap="round"/>
+    <circle cx="40" cy="7" r="4.5" fill="#a1663a"/><circle cx="60" cy="7" r="4.5" fill="#a1663a"/>
+    <ellipse cx="22" cy="32" rx="11" ry="5.5" fill="#fdd835" ${S} transform="rotate(-25 22 32)"/>
+    <ellipse cx="78" cy="32" rx="11" ry="5.5" fill="#fdd835" ${S} transform="rotate(25 78 32)"/>
+    <ellipse cx="50" cy="44" rx="22" ry="27" fill="#fdd835" ${S}/>
+    <circle cx="37" cy="27" r="4.5" fill="#a1663a"/><circle cx="63" cy="29" r="4" fill="#a1663a"/><circle cx="50" cy="22" r="3" fill="#a1663a"/>
+    <ellipse cx="50" cy="62" rx="16" ry="11" fill="#ffecb3" ${S}/>
+    <circle cx="44" cy="60" r="1.8" fill="#4a4a4a"/><circle cx="56" cy="60" r="1.8" fill="#4a4a4a"/>
+    <path d="M43 66 Q50 71 57 66" fill="none" ${S}/>
+    ${eyes(40, 60, 42)}` },
+
+  { name: 'ライオン', svg: `
+    <polygon points="${manePoints()}" fill="#e67e22" ${S}/>
+    <circle cx="50" cy="52" r="27" fill="#fdd17a" ${S}/>
+    ${eyes(40, 60, 47)}
+    <path d="M44.5 55 H55.5 L50 61.5Z" fill="#8d5524"/>
+    <path d="M50 61.5 Q44 69 38 64 M50 61.5 Q56 69 62 64" fill="none" ${S}/>
+    <circle cx="36" cy="60" r="1.2" fill="#8d5524"/><circle cx="64" cy="60" r="1.2" fill="#8d5524"/>` },
+
+  { name: 'パンダ', svg: `
+    <circle cx="24" cy="24" r="13" fill="#333"/><circle cx="76" cy="24" r="13" fill="#333"/>
+    <circle cx="50" cy="54" r="35" fill="#fff" ${S}/>
+    <ellipse cx="36" cy="50" rx="8.5" ry="11" fill="#333" transform="rotate(20 36 50)"/>
+    <ellipse cx="64" cy="50" rx="8.5" ry="11" fill="#333" transform="rotate(-20 64 50)"/>
+    <circle cx="37" cy="49" r="3" fill="#fff"/><circle cx="63" cy="49" r="3" fill="#fff"/>
+    <ellipse cx="50" cy="64" rx="5" ry="3.5" fill="#333"/>
+    <path d="M50 67.5 Q45 74 40 70 M50 67.5 Q55 74 60 70" fill="none" ${S}/>` },
+
+  { name: 'ぶた', svg: `
+    <path d="M22 36 L20 10 L46 24Z" fill="#f48fb1" ${S}/>
+    <path d="M78 36 L80 10 L54 24Z" fill="#f48fb1" ${S}/>
+    <circle cx="50" cy="54" r="35" fill="#f8bbd0" ${S}/>
+    ${eyes(37, 63, 46)}
+    <ellipse cx="50" cy="63" rx="15" ry="11" fill="#f48fb1" ${S}/>
+    <ellipse cx="44.5" cy="63" rx="2.6" ry="4" fill="#ad1457"/><ellipse cx="55.5" cy="63" rx="2.6" ry="4" fill="#ad1457"/>
+    <path d="M42 79 Q50 84 58 79" fill="none" ${S}/>` },
+
+  { name: 'くま', svg: `
+    <circle cx="24" cy="26" r="13" fill="#a1663a" ${S}/><circle cx="24" cy="26" r="6.5" fill="#f3c9a0"/>
+    <circle cx="76" cy="26" r="13" fill="#a1663a" ${S}/><circle cx="76" cy="26" r="6.5" fill="#f3c9a0"/>
+    <circle cx="50" cy="54" r="35" fill="#a1663a" ${S}/>
+    <ellipse cx="50" cy="66" rx="17" ry="13" fill="#f6dcc0"/>
+    ${eyes(37, 63, 48)}
+    <ellipse cx="50" cy="60" rx="5.5" ry="4" fill="#333"/>
+    <path d="M50 64 V68 M43 70 Q50 76 57 70" fill="none" ${S}/>` },
+
+  { name: 'さる', svg: `
+    <circle cx="15" cy="50" r="12" fill="#8d6e63" ${S}/><circle cx="15" cy="50" r="6.5" fill="#f3c9a0"/>
+    <circle cx="85" cy="50" r="12" fill="#8d6e63" ${S}/><circle cx="85" cy="50" r="6.5" fill="#f3c9a0"/>
+    <circle cx="50" cy="50" r="35" fill="#8d6e63" ${S}/>
+    <circle cx="39" cy="44" r="14" fill="#f3c9a0"/><circle cx="61" cy="44" r="14" fill="#f3c9a0"/>
+    <ellipse cx="50" cy="62" rx="22" ry="17" fill="#f3c9a0"/>
+    ${eyes(40, 60, 44)}
+    <circle cx="47" cy="57" r="1.5" fill="#4a4a4a"/><circle cx="53" cy="57" r="1.5" fill="#4a4a4a"/>
+    <path d="M38 65 Q50 76 62 65" fill="none" ${S}/>` },
+
+  { name: 'ペンギン', svg: `
+    <ellipse cx="17" cy="60" rx="7" ry="20" fill="#37474f" ${S} transform="rotate(18 17 60)"/>
+    <ellipse cx="83" cy="60" rx="7" ry="20" fill="#37474f" ${S} transform="rotate(-18 83 60)"/>
+    <ellipse cx="38" cy="94" rx="10" ry="4.5" fill="#fb8c00" ${S}/><ellipse cx="62" cy="94" rx="10" ry="4.5" fill="#fb8c00" ${S}/>
+    <ellipse cx="50" cy="52" rx="30" ry="42" fill="#37474f" ${S}/>
+    <path d="M50 22 Q26 24 28 56 Q30 88 50 88 Q70 88 72 56 Q74 24 50 22Z" fill="#fff"/>
+    <path d="M50 22 Q40 14 34 30 Q42 26 50 34 Q58 26 66 30 Q60 14 50 22Z" fill="#37474f"/>
+    ${eyes(40, 60, 36)}
+    <path d="M43.5 42 H56.5 L50 51Z" fill="#fb8c00" ${S}/>` },
+];
+
+// ------------------------------------------------------------
+// クイズ用:いろ(name:こたえ  color:色)
+// ------------------------------------------------------------
+const COLORS = [
+  { name: 'あか',     color: '#e53935' },
+  { name: 'あお',     color: '#1e88e5' },
+  { name: 'きいろ',   color: '#fdd835' },
+  { name: 'みどり',   color: '#43a047' },
+  { name: 'オレンジ', color: '#fb8c00' },
+  { name: 'ピンク',   color: '#f48fb1' },
+  { name: 'むらさき', color: '#8e24aa' },
+  { name: 'ちゃいろ', color: '#795548' },
+  { name: 'くろ',     color: '#212121' },
+  { name: 'しろ',     color: '#ffffff' },
+];
+// いろのもんだいで見せる絵:えのぐを ぽたっと たらした形(color の色でぬる)
+function colorBlob(color) {
+  return svgWrap(`<path d="M50 8 Q72 3 80 22 Q99 30 92 52 Q99 76 76 85 Q60 99 42 90 Q17 95 12 70 Q-1 50 14 34 Q18 9 50 8Z" fill="${color}" ${S}/>
+    <path d="M26 36 Q30 24 42 20" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".45"/>`);
+}
+
+// ------------------------------------------------------------
+// クイズ用:かたち(name:こたえ  draw:色を受け取って絵を作る)
+// ------------------------------------------------------------
+const SHAPES = [
+  { name: 'まる',       draw: c => `<circle cx="50" cy="50" r="40" fill="${c}" ${S}/>` },
+  { name: 'さんかく',   draw: c => `<path d="M50 10 L92 86 H8Z" fill="${c}" ${S}/>` },
+  { name: 'しかく',     draw: c => `<rect x="13" y="13" width="74" height="74" fill="${c}" ${S}/>` },
+  { name: 'ながしかく', draw: c => `<rect x="4" y="28" width="92" height="44" fill="${c}" ${S}/>` },
+  { name: 'ほし',       draw: c => `<path d="M50 6 L61 37 L94 38 L68 58 L77 90 L50 71 L23 90 L32 58 L6 38 L39 37Z" fill="${c}" ${S}/>` },
+  { name: 'ハート',     draw: c => `<path d="M50 88 Q6 58 10 32 Q14 10 34 14 Q46 17 50 30 Q54 17 66 14 Q86 10 90 32 Q94 58 50 88Z" fill="${c}" ${S}/>` },
+];
+
+// ------------------------------------------------------------
+// クイズ用:とけい(hour 時ちょうどの絵を作る)
+// ------------------------------------------------------------
+function clockSvg(hour) {
+  let numbers = '', ticks = '';
+  for (let n = 1; n <= 12; n++) {
+    const a = (n / 12) * 2 * Math.PI;               // 12時を上にして時計まわり
+    const x = 50 + 33 * Math.sin(a), y = 50 - 33 * Math.cos(a);
+    numbers += `<text x="${x.toFixed(1)}" y="${(y + 3.6).toFixed(1)}" font-size="10" font-weight="700" text-anchor="middle" fill="#3e3e3e">${n}</text>`;
+    ticks += `<line x1="${(50 + 41 * Math.sin(a)).toFixed(1)}" y1="${(50 - 41 * Math.cos(a)).toFixed(1)}" x2="${(50 + 44 * Math.sin(a)).toFixed(1)}" y2="${(50 - 44 * Math.cos(a)).toFixed(1)}" stroke="#90a4ae" stroke-width="1.5"/>`;
+  }
+  const ha = (hour / 12) * 2 * Math.PI;             // みじかい はり(じ)の向き
+  return svgWrap(`
+    <circle cx="50" cy="50" r="47" fill="#42a5f5" ${S}/>
+    <circle cx="50" cy="50" r="42" fill="#fff"/>
+    ${ticks}${numbers}
+    <line x1="50" y1="50" x2="50" y2="25" stroke="#1e88e5" stroke-width="3" stroke-linecap="round"/>
+    <line x1="50" y1="50" x2="${(50 + 20 * Math.sin(ha)).toFixed(1)}" y2="${(50 - 20 * Math.cos(ha)).toFixed(1)}" stroke="#e53935" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="50" cy="50" r="3.5" fill="#333"/>`);
+}

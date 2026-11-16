@@ -62,7 +62,8 @@ let practice = null;       // もんだいだけモード中は {types:出す種
 let greetPending = false;  // 朝/夜のはじまりのあいさつを、まだ言っていない
 let breakfastOn = false;   // いま朝ごはんタイマーの表示中か
 let breakfastEmptySaid = false;  // 「おしまいだよ」をもう言ったか
-let lastAnswer = null;     // 直前のもんだいのこたえ(同じもんだいが続かないようにする)
+let lastAnswer = null;
+let usedQuizTypes = [];     // この回にもう出した問題の種類(3問がなるべく別の種類になるようにする)     // 直前のもんだいのこたえ(同じもんだいが続かないようにする)
 
 // よく使う小道具 ---------------------------------------------
 const $ = id => document.getElementById(id);                       // 部品を名前で探す
@@ -583,22 +584,119 @@ function makePictureQuiz() {
   };
 }
 
+// こたえが数字のもんだいで使う:せいかい(ans)と、それに近い数から3つをえらんで、小さい順にならべる
+function numberChoices(ans, min, max) {
+  const pool = [];
+  for (let n = Math.max(min, ans - 3); n <= Math.min(max, ans + 3); n++) if (n !== ans) pool.push(n);
+  return shuffle(pool).slice(0, 3).concat(ans).sort((x, y) => x - y);
+}
+
+// 名前のついた絵の一覧(list)から、せいかい1つと まちがい3つをえらぶ
+function pickNamed(list) {
+  const target = pick(list);
+  const others = shuffle(list.filter(x => x.name !== target.name)).slice(0, 3);
+  return { target, choices: shuffle(others.concat(target)).map(x => x.name) };
+}
+
+// かぞえよう(1〜10この絵をかぞえる)
+function makeCountQuiz() {
+  const n = rand(1, 10);
+  const item = pick(FRUITS.slice(0, 4).concat(ANIMALS));     // りんご・バナナ・みかん・いちご か、どうぶつ
+  return {
+    question: 'いくつ あるかな？',
+    // 5こずつの列にならべる(かぞえやすいように)
+    picture: `<div class="count-box">${`<div class="count-item">${svgWrap(item.svg)}</div>`.repeat(n)}</div>`,
+    choices: numberChoices(n, 1, 10).map(String),
+    answer: String(n),
+    speech: 'いくつ あるかな？',
+    praise: `せいかい！ ${n}こ だよ！`,
+  };
+}
+
+// いろ(なにいろ かな?)
+function makeColorQuiz() {
+  const { target, choices } = pickNamed(COLORS);
+  return {
+    question: 'なにいろ かな？',
+    picture: colorBlob(target.color),
+    choices: choices,
+    answer: target.name,
+    speech: 'なにいろ かな？',
+    praise: `せいかい！ これは、${target.name} だよ！`,
+  };
+}
+
+// かたち(どんな かたち かな?)
+function makeShapeQuiz() {
+  const { target, choices } = pickNamed(SHAPES);
+  const color = pick(['#e53935', '#1e88e5', '#fdd835', '#43a047', '#fb8c00', '#f48fb1']);   // 色は毎回かわる
+  return {
+    question: 'どんな かたち かな？',
+    picture: svgWrap(target.draw(color)),
+    choices: choices,
+    answer: target.name,
+    speech: 'どんな かたち かな？',
+    praise: `せいかい！ これは、${target.name} だよ！`,
+  };
+}
+
+// どうぶつ(これは なに?)
+function makeAnimalQuiz() {
+  const { target, choices } = pickNamed(ANIMALS);
+  return {
+    question: 'これは なに？',
+    picture: svgWrap(target.svg),
+    choices: choices,
+    answer: target.name,
+    speech: 'これは、なにかな？',
+    praise: `せいかい！ これは、${target.name} だよ！`,
+  };
+}
+
+// とけい(なんじ かな? ちょうどの時刻だけ)
+function makeClockQuiz() {
+  const hour = rand(1, 12);
+  return {
+    question: 'なんじ かな？',
+    picture: clockSvg(hour),
+    choices: numberChoices(hour, 1, 12).map(h => h + 'じ'),
+    answer: hour + 'じ',
+    speech: 'なんじ かな？',
+    praise: `せいかい！ ${hour}じ だよ！`,
+  };
+}
+
 // もんだいを1つ作って画面に出す
 function showQuiz() {
-  const makers = { math: makeMathQuiz, map: makeMapQuiz, picture: makePictureQuiz };
+  const makers = {
+    math: makeMathQuiz, map: makeMapQuiz, picture: makePictureQuiz,
+    count: makeCountQuiz, color: makeColorQuiz, shape: makeShapeQuiz, animal: makeAnimalQuiz, clock: makeClockQuiz,
+  };
   // config.json の quiz_types に書かれた種類からランダムにえらぶ
   // もんだいだけモードのときは、メニューで選んだ種類を出す
   let types = ((practice ? practice.types : cfg.quiz_types) || []).filter(t => makers[t]);
   if (types.length === 0) types = Object.keys(makers);
+  // 1回に出すもんだいの数(config.js の quiz_count)と、もうせいかいした数
+  const total = Math.max(1, Number(cfg.quiz_count) || 1);
+  const doneBefore = practice ? 0 : Math.min(record.quiz_correct || 0, total - 1);
+  // ふつうのモードでは、まだ出していない種類からえらぶ(ぜんぶ出したら、また全種類から)
+  if (!practice) {
+    if (doneBefore === 0) usedQuizTypes = [];
+    const fresh = types.filter(t => !usedQuizTypes.includes(t));
+    if (fresh.length > 0) types = fresh; else usedQuizTypes = [];
+  }
   // 直前と同じこたえのもんだいは、なるべく続けて出さない(5回まで作りなおす)
-  let quiz = makers[pick(types)]();
-  for (let i = 0; i < 5 && quiz.answer === lastAnswer; i++) quiz = makers[pick(types)]();
+  let type = pick(types);
+  let quiz = makers[type]();
+  for (let i = 0; i < 5 && quiz.answer === lastAnswer; i++) { type = pick(types); quiz = makers[type](); }
   lastAnswer = quiz.answer;
+  if (!practice) usedQuizTypes.push(type);
   const key = sessionKey;        // 途中で時間切れになったか調べるために覚えておく
   const mode = practice;         // もんだいだけモードが途中で終わったか調べるために覚えておく
-  // もんだいだけモードのときだけ、右上にせいかいの数(★)を出す
-  $('quiz-count').classList.toggle('hidden', !practice);
-  if (practice) $('quiz-count').textContent = '★ ' + practice.count;
+  // 右上の★:もんだいだけモードは せいかいの数、ふつうのモードは「★☆☆」(できた数と のこり)
+  const stars = n => '★'.repeat(n) + '☆'.repeat(total - n);
+  $('quiz-count').classList.toggle('hidden', !practice && total <= 1);
+  $('quiz-count').textContent = practice ? '★ ' + practice.count : stars(doneBefore);
   let locked = false;            // せいかいの後は押せなくする
 
   $('quiz-question').textContent = quiz.question;
@@ -633,8 +731,20 @@ function showQuiz() {
           });
           return;
         }
+        // ふつうのモード:★を1つぬって、きめられた数にとどくまで次のもんだいへ
+        const doneNow = doneBefore + 1;
+        record.quiz_correct = doneNow;     // とちゅうで開き直しても、つづきから出せるよう保存する
+        $('quiz-count').textContent = stars(doneNow);
+        if (doneNow < total) {
+          saveRecord();
+          Promise.all([praised, sleep(1800)]).then(() => {
+            $('quiz-result').classList.add('hidden');
+            if (sessionKey === key && !practice) showQuiz();
+          });
+          return;
+        }
         record.quiz = true;
-        record.hanamaru = true;      // もんだいができたら花丸
+        record.hanamaru = true;      // もんだいがぜんぶできたら花丸
         saveRecord();
         Promise.all([praised, sleep(2200)]).then(() => {
           $('quiz-result').classList.add('hidden');

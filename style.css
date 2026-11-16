@@ -338,3 +338,8 @@ body.practice .screen { background: linear-gradient(#d5f5d0, #fffbe0); }
 
 /* VOICEVOX のクレジット(時間外の画面の右下) */
 .voice-credit { position: fixed; right: calc(2vw + env(safe-area-inset-right)); bottom: calc(2vh + env(safe-area-inset-bottom)); font-size: 2.4vh; color: #3a3a3a; font-weight: 400; }
+
+/* かぞえよう:絵を5こずつの列にならべる */
+.count-box { width: 100%; display: flex; flex-wrap: wrap; justify-content: center; align-content: center; gap: 2vh 1.2%; }
+.count-item { width: 18.5%; }
+.count-item svg { width: 100%; height: auto; display: block; }

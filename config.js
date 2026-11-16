@@ -28,8 +28,13 @@ const CONFIG = {
   // 朝・夜それぞれで見られる動画の本数(0 で無制限)
   videos_per_session: 1,
 
-  // 出す問題の種類  math:たしざん  map:にほんちず  picture:これはなに?
-  quiz_types: ['math', 'map', 'picture'],
+  // 1回(朝・夜それぞれ)に出す問題の数。ぜんぶ正解すると花丸
+  quiz_count: 3,
+
+  // 出す問題の種類(ここから消すと、その種類は出なくなります)
+  //   math:たしざん  map:にほんちず  picture:これはなに?(くだもの・のりもの)
+  //   count:かぞえよう  color:いろ  shape:かたち  animal:どうぶつ  clock:とけい
+  quiz_types: ['math', 'map', 'picture', 'count', 'color', 'shape', 'animal', 'clock'],
 
   // 地図問題に出す都道府県(空ならぜんぶ)
   //   例: ['tokyo', 'osaka', 'hokkaido', 'okinawa']
