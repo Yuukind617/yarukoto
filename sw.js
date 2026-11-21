@@ -7,7 +7,10 @@
 //   3. 電波があるときは、裏で新しい版を取りに行って保存しなおす
 //      → 設定などを書きかえた場合、「2回目に開いたとき」から新しくなる
 // ============================================================
-const CACHE = 'yarukoto-v10';
+// ※ はいたつごっこなど、同じ github.io に置くほかのアプリの保存場所はさわらないよう、
+//    「yarukoto-」で始まるものだけを片づける
+const PREFIX = 'yarukoto-';
+const CACHE = PREFIX + 'v11';
 // 保存しておくファイルの一覧
 const FILES = ['./', 'index.html', 'style.css', 'config.js', 'voice.js', 'pictures.js', 'japan_map.js', 'app.js', 'icon.png', 'manifest.json'];
 
@@ -20,7 +23,7 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+      .then(keys => Promise.all(keys.filter(k => k.startsWith(PREFIX) && k !== CACHE).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
